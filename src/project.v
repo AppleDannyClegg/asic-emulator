@@ -65,7 +65,6 @@ module tt_um_protocol_emulator #(
   wire [7:0]  e_pin_dir [0:NENG-1];
   wire [7:0]  e_irq     [0:NENG-1];
   wire        e_overrun  [0:NENG-1];   // engine sticky FIFO-overrun status (FSTAT.RXOVER), not a user IRQ
-  wire        any_overrun;
   wire        e_txf_full[0:NENG-1];
   wire        e_stalled [0:NENG-1];
   wire [4:0]  e_pc      [0:NENG-1];
