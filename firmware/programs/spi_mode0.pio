@@ -1,0 +1,18 @@
+; SPI master, mode 0 (CPOL=0, CPHA=0), MSB-first — protocol-emulator ISA v0.3
+; Engine SHIFTCTRL: OUT_SHIFTDIR=left (MSB-first), IN_SHIFTDIR=left.
+; PINCTRL (example): OUT_BASE=0 (MOSI), SET_BASE=1 (SCLK), IN_BASE=2 (MISO).
+; CS_N is owned by another engine or the sequencer (cross-engine IRQ), so this
+; program is pure MOSI/SCLK/MISO and needs no side-set (side_count = 0).
+; div set so one engine cycle = the SPI half-period.
+spi_txrx:
+    pull block              ; OSR <- byte to send
+    set x, 7                ; 8 bits
+    set pindirs, 1          ; OUT pins = outputs (MOSI)
+bit_loop:
+    out pins, 1             ; MOSI <- next MSB (shift-dir left)
+    set pins, 1             ; SCLK high (leading edge; sample here)
+    in pins, 1              ; sample MISO
+    set pins, 0             ; SCLK low (trailing edge)
+    jmp x-- bit_loop
+    push block              ; ISR -> RX FIFO
+    jmp always, spi_txrx

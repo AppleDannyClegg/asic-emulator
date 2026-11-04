@@ -1,0 +1,14 @@
+; UART TX 8N1 — protocol-emulator ISA v0.3
+; SHIFTCTRL: OUT_SHIFTDIR=right (LSB-first). PINCTRL: OUT_BASE=0 (TX), SET_BASE=0.
+; div = clk_hz / (baud * T) with T = engine cycles per bit (e.g. T=8, delay [6]).
+; Idle line is high: the sequencer sets the pin high before enabling the engine.
+uart_tx:
+    pull block              ; OSR <- next byte (blocks on empty TX FIFO)
+    set pindirs, 1          ; TX pin = output
+    set x, 7                ; 8 data bits
+    set pins, 0 [6]         ; START (0)
+data:
+    out pins, 1 [6]         ; shift OSR bit0 -> TX
+    jmp x-- data [6]
+    set pins, 1 [6]         ; STOP (1)
+    jmp always, uart_tx

@@ -1,0 +1,39 @@
+; I2C master, 7-bit address, standard mode — protocol-emulator ISA v0.3
+; PINCTRL: OPEN_DRAIN bits set for SDA and SCL (driven-1 auto-releases), so the
+; engine writes 0 to pull low and 1 to release; no per-cycle PINDIRS toggling.
+; PINCTRL (example): SET_BASE=0 (SCL bit0, SDA bit1), IN_BASE=0 (SDA bit1 read back).
+; div set for the SCL half-period.
+;
+; This fragment sends one byte MSB-first and samples the ACK; START/STOP are
+; separate entry points the sequencer/another engine calls.
+
+; --- START: SDA high, SCL high, then SDA low while SCL high, then SCL low ---
+i2c_start:
+    set pins, 0b11          ; release SDA+SCL (open-drain -> high)
+    set pins, 0b01          ; SDA low (SCL still high)  [START condition]
+    set pins, 0b00          ; SCL low
+    jmp always, i2c_write
+
+; --- send one byte, MSB-first, then read ACK ---
+i2c_write:
+    pull block              ; OSR <- byte (address+W or data)
+    set x, 7
+bit_loop:
+    out pins, 1             ; SDA <- MSB (shift-dir left); SCL still low
+    set pins, 0b10          ; SCL high (SDA = data bit)
+    set pins, 0b00          ; SCL low
+    jmp x-- bit_loop
+    ; 9th clock: release SDA, sample ACK
+    set pindirs, 0          ; release SDA (or rely on OPEN_DRAIN)
+    set pins, 0b10          ; SCL high
+    in pins, 1              ; sample SDA (ACK = 0)
+    set pins, 0b00          ; SCL low
+    push block              ; ACK bit -> RX FIFO
+    jmp always, i2c_write
+
+; --- STOP: SDA low, SCL high, SDA high while SCL high ---
+i2c_stop:
+    set pins, 0b00          ; SDA low, SCL low
+    set pins, 0b10          ; SCL high
+    set pins, 0b11          ; SDA high (SCL high)  [STOP condition]
+    jmp always, i2c_start
