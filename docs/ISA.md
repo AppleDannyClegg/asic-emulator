@@ -1,4 +1,4 @@
-# ISA + engine model — **FROZEN v0.1** (Legion, board 4 Nov 2026; Cerebro/Ash objection window)
+# ISA + engine model — **FROZEN v0.2** (Legion, board 4 Nov 2026; Cerebro/Ash objection window)
 
 Architecture **C: a minimal sequencer + 4 PIO-style engines**, shared instruction SRAM, up to 8 GPIO.
 Target IHP 130 nm CMOS5L via Tiny Tapeout, **6×4 tiles** (~0.9 mm² gross, ~24K cells).
@@ -34,7 +34,7 @@ Instruction memory: **64 × 16-bit shared SRAM**, 16-bit PC per engine.
 - IN src: pins/x/y/isr/osr, n bits. OUT dst: pins/x/y/pc/isr/exec, n bits.
 - PUSH/PULL: block/noblock, iffull/ifempty. Full RX FIFO + blocking PUSH stalls the engine
   (correct back-pressure for UART); noblock drops/overwrites. Optional autopull/autopush thresholds.
-- MOV dst,src: pins/x/y/isr/osr/status + `!` (not) and `::` (bit-reverse).
+- MOV dst,src: pins/x/y/isr/osr/status + 2-bit op `[4:3]` = none / `!` (not) / `::` (bit-reverse), 3-bit src `[2:0]`. (Encoding: `[7:5]` dst, `[4:3]` op, `[2:0]` src.)
 - SET dst: pins/x/y/pindirs, 5-bit immediate.
 
 ## I2C open-drain
@@ -48,8 +48,8 @@ No native open-drain in PIO. Firmware emulates it with `SET PINDIRS` (drive low 
 Register-mapped control: IMEM write (addr + 16-bit data), `SMx_CLKDIV`/`EXECCTRL`/`SHIFTCTRL`/
 `PINCTRL`, `SMx_ENABLE`, TXF push / RXF pop, IRQ clear, then set PC + enable.
 
-**Open:** Tiny Tapeout has no host bus — how does firmware load **after fab** (the competition wants
-"reprogrammable after fabrication")? proposal: a small **serial config port** (e.g. 4 pins:
-`cfg_clk/cfg_din/cfg_load/cfg_done`, or time-multiplexed on `uio`) with a defined (addr, data)
-frame. This is an ARCH decision (Cerebro/Ash) and it sets how many pins the emulator exposes
-(8 GPIO, minus config if shared).
+**DECIDED (v0.2):** a 4-pin serial **config port** for post-fab load, time-multiplexed on
+`uio[7:4]` when `cfg_load=1` so all 8 GPIO are free at runtime. Pins `cfg_clk / cfg_din /
+cfg_load / cfg_done`; frame = `cmd[7:0]` + `payload[31:0]` (cmd selects IMEM write / SM register /
+enable / done). See `SPEC.md` §9 for the full register/​frame map. `PINCTRL.OPEN_DRAIN[7:0]` is
+confirmed as the I2C simplifier (SET PINDIRS remains the fallback).

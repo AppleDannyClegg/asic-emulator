@@ -46,7 +46,7 @@ The **divider** (§6) is the primary timing knob; delay is fine trim. A `JMP X--
 | `IN` | 010 | `[7:5]` src, `[4:0]` n | shift `n` bits from `src` into ISR |
 | `OUT` | 011 | `[7:5]` dst, `[4:0]` n | shift `n` bits from OSR to `dst` |
 | `PUSH/PULL` | 100 | `[7]` block, `[6]` iffull/ifempty, `[5]` push/pull, `[4:0]` 0 | FIFO transfer |
-| `MOV` | 101 | `[7:5]` dst, `[4]` op, `[3:0]` src | move `src` to `dst` |
+| `MOV` | 101 | `[7:5]` dst, `[4:3]` op, `[2:0]` src | move `src` to `dst` (`op`: 00 none, 01 invert `!`, 10 reverse `::`) |
 | `IRQ` | 110 | `[7]` wait, `[6]` clear/set, `[5]` rel/abs, `[4:0]` idx | set/clear/wait on IRQ flag |
 | `SET` | 111 | `[7:5]` dst, `[4:0]` imm | `dst = imm` (5-bit) |
 
@@ -54,7 +54,7 @@ The **divider** (§6) is the primary timing knob; delay is fine trim. A `JMP X--
 `110` `PIN`, `111` `!OSRE`.
 
 `IN` sources: `pins, x, y, null, isr, osr`. `OUT` destinations: `pins, x, y, null, pindirs, pc, isr, exec`.
-`MOV` sources: `pins, x, y, null, isr, osr, status`; with `op`: `normal, invert(!), reverse(::)`.
+`MOV` sources (3-bit, up to 8): `pins, x, y, null, isr, osr, status`; with 2-bit `op`: `none, invert(!), reverse(::)`.
 `WAIT` sources: `gpio, pin, irq`.
 
 ## 4. Engine (per state machine ×4)
