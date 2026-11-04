@@ -42,10 +42,10 @@ The **divider** (§6) is the primary timing knob; delay is fine trim. A `JMP X--
 | Op | Code | Operand split | Semantics |
 |---|---|---|---|
 | `JMP` | 000 | `[7:5]` cond, `[4:0]` addr | branch to `addr` if `cond` |
-| `WAIT` | 001 | `[7:6]` src, `[5]` pol, `[4:0]` idx | stall until `(src[idx] == pol)` |
+| `WAIT` | 001 | `[7]` pol, `[6:5]` src, `[4:0]` idx | stall until `(src[idx] == pol)` |
 | `IN` | 010 | `[7:5]` src, `[4:0]` n | shift `n` bits from `src` into ISR |
 | `OUT` | 011 | `[7:5]` dst, `[4:0]` n | shift `n` bits from OSR to `dst` |
-| `PUSH/PULL` | 100 | `[7]` block, `[6]` iffull/ifempty, `[5]` push/pull, `[4:0]` 0 | FIFO transfer |
+| `PUSH/PULL` | 100 | `[7]` 0 push/1 pull, `[6]` iffull/ifempty, `[5]` block, `[4:0]` 0 | FIFO transfer |
 | `MOV` | 101 | `[7:5]` dst, `[4:3]` op, `[2:0]` src | move `src` to `dst` (`op`: 00 none, 01 invert `!`, 10 reverse `::`) |
 | `IRQ` | 110 | `[7]` wait, `[6]` clear/set, `[5]` rel/abs, `[4:0]` idx | set/clear/wait on IRQ flag |
 | `SET` | 111 | `[7:5]` dst, `[4:0]` imm | `dst = imm` (5-bit) |

@@ -165,7 +165,18 @@ def encode(instr: str, labels: dict[str, int], addr: int, side_count: int) -> in
     return (code << 13) | (dfield << 8) | (operand & 0xFF)
 
 
-def assemble(source: str, side_count: int = 0) -> list[int]:
+def assemble(source: str, side_count: int = 0, defines: dict[str, int] | None = None) -> list[int]:
+    if defines:
+        import re as _re
+
+        def _sub(m):
+            expr = m.group(1)
+            try:
+                return str(eval(expr, {"__builtins__": {}}, dict(defines)))
+            except Exception as e:  # noqa: BLE001
+                raise AsmError(f"bad {{...}} expression {expr!r}: {e}") from None
+
+        source = _re.sub(r"\{([^}]+)\}", _sub, source)
     lines = []
     for raw in source.splitlines():
         line = _strip_comment(raw)
@@ -243,7 +254,14 @@ def main(argv: list[str]) -> int:
     side_count = 0
     if "--side-count" in argv:
         side_count = int(argv[argv.index("--side-count") + 1])
-    words = assemble(open(path).read(), side_count)
+    defines: dict[str, int] = {}
+    if "--define" in argv:
+        for spec in argv[argv.index("--define") + 1:]:
+            if "=" not in spec:
+                break
+            k, v = spec.split("=", 1)
+            defines[k] = int(v, 0)
+    words = assemble(open(path).read(), side_count, defines)
     as_hex = "--hex" in argv
     for w in words:
         print(f"{w:04x}" if as_hex else f"{w:016b}  {w:#06x}  {disassemble(w)}")

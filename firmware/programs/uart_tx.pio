@@ -1,14 +1,20 @@
-; UART TX 8N1 — protocol-emulator ISA v0.3
+; UART TX 8N1 — protocol-emulator ISA v0.4
 ; SHIFTCTRL: OUT_SHIFTDIR=right (LSB-first). PINCTRL: OUT_BASE=0 (TX), SET_BASE=0.
-; div = clk_hz / (baud * T) with T = engine cycles per bit (e.g. T=8, delay [6]).
+; div = clk_hz / (baud * T) with T = engine cycles per bit (T <= 32, delay field max 31).
 ; Idle line is high: the sequencer sets the pin high before enabling the engine.
+;
+; UNIFORM BIT PERIOD (fixed): every bit is exactly T engine cycles. The data loop
+; spends 1 cycle on `out` and T-1 on the jmp delay, so one iteration = T; start and
+; stop use a single instruction with delay T-1 (1 + (T-1) = T). A naive
+; `out [{T-2}] / jmp x-- [{T-2}]` makes data bits 2*(T-1) while start/stop are T-1 -
+; non-uniform and unreadable. Keep the invariant: one bit = T cycles.
 uart_tx:
     pull block              ; OSR <- next byte (blocks on empty TX FIFO)
     set pindirs, 1          ; TX pin = output
     set x, 7                ; 8 data bits
-    set pins, 0 [6]         ; START (0)
+    set pins, 0 [{T-1}]       ; START (0), T cycles
 data:
-    out pins, 1 [6]         ; shift OSR bit0 -> TX
-    jmp x-- data [6]
-    set pins, 1 [6]         ; STOP (1)
+    out pins, 1             ; shift OSR bit0 -> TX (1 cycle)
+    jmp x-- data [{T-2}]      ; 1 + (T-2) = T-1 -> data bit total T cycles
+    set pins, 1 [{T-1}]       ; STOP (1), T cycles
     jmp always, uart_tx
