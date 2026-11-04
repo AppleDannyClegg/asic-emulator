@@ -53,7 +53,10 @@ module tb_uart_cfg;
     if (match>=0 && dut.e_pin_dir[0][0]!==1'b1) begin
       match=-1; $display("FAIL: TX frame matched but pin_dir[0]=%b (pin not driven)", dut.e_pin_dir[0][0]);
     end
-    if (match>=0) $display("PASS cfg-loop: engine0 TX frame for 0x41 matches uart_ref at sample %0d", match);
+    // Vision 19:58:50 ceiling: assert the FSTAT overrun status is wired to uo_out bit 3.
+    if (uo_out[3] !== dut.any_overrun)
+      $display("WARN: uo_out[3]=%b != any_overrun=%b (FSTAT status wiring)", uo_out[3], dut.any_overrun);
+    if (match>=0) $display("PASS cfg-loop: engine0 TX frame for 0x41 matches uart_ref at sample %0d (uo_out[3]=fstat_overrun=%b)", match, uo_out[3]);
     else begin
       $display("FAIL cfg-loop: pin_dir0[0]=%b enable0=%b", dut.e_pin_dir[0][0], dut.enable[0]);
     end
