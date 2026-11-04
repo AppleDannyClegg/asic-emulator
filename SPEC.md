@@ -134,9 +134,10 @@ One system clock `clk_hz` (Tiny Tapeout `clock_hz` in `info.yaml`). Each engine 
 - **Autopull/autopush**: thresholds in `SHIFTCTRL` so `OUT`/`IN` auto-refill/flush without explicit
   PUSH/PULL.
 - **Overrun policy (RX)**: default **non-blocking push-if-full = drop the byte + set a sticky
-  `OVERRUN` bit in the engine's FIFO-status register (FSTAT)** — **not** a user IRQ. Readable via the cfg
-  port (M3.2 readback). A blocking RX that deadlocks a protocol is worse than a dropped byte.
-  **TX default blocking** (back-pressure). A stall is a *status* (`stalled`/FSTAT), never a user IRQ.
+  `RXOVER` bit in the engine's FIFO-status register `FSTAT`** (cf. RP2040 `FDEBUG.RXOVER`) — **not** a
+  user IRQ. Sticky: cleared only by an explicit cfg `FSTAT_CLEAR`, never by `IRQ clear`. Also cfg-readable
+  (M3.2). A blocking RX that deadlocks a protocol is worse than a dropped byte.
+  **TX default blocking** (back-pressure). A stall is a *status* (`stalled`/`FSTAT`), never a user IRQ.
 
 ## 8. Interrupts
 
