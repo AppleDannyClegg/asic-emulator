@@ -28,3 +28,9 @@
 ##   0:00:06  Checking assumptions in step 13..
 ##   0:00:08  Checking assertions in step 13..
 ##   0:00:08  Checking assumptions in step 14..
+##   0:00:10  Checking assertions in step 14..
+##   0:00:10  Checking assumptions in step 15..
+##   0:00:13  Checking assertions in step 15..
+##   0:00:13  Checking assumptions in step 16..
+##   0:00:16  Checking assertions in step 16..
+##   0:00:17  Checking assumptions in step 17..

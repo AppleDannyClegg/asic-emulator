@@ -40,3 +40,9 @@ SBY 18:12:51 [test/formal/engine] engine_0: ##   0:00:06  Checking assertions in
 SBY 18:12:51 [test/formal/engine] engine_0: ##   0:00:06  Checking assumptions in step 13..
 SBY 18:12:53 [test/formal/engine] engine_0: ##   0:00:08  Checking assertions in step 13..
 SBY 18:12:53 [test/formal/engine] engine_0: ##   0:00:08  Checking assumptions in step 14..
+SBY 18:12:55 [test/formal/engine] engine_0: ##   0:00:10  Checking assertions in step 14..
+SBY 18:12:55 [test/formal/engine] engine_0: ##   0:00:10  Checking assumptions in step 15..
+SBY 18:12:57 [test/formal/engine] engine_0: ##   0:00:13  Checking assertions in step 15..
+SBY 18:12:57 [test/formal/engine] engine_0: ##   0:00:13  Checking assumptions in step 16..
+SBY 18:13:01 [test/formal/engine] engine_0: ##   0:00:16  Checking assertions in step 16..
+SBY 18:13:02 [test/formal/engine] engine_0: ##   0:00:17  Checking assumptions in step 17..
