@@ -53,13 +53,21 @@ module tb_uart_cfg;
     if (match>=0 && dut.e_pin_dir[0][0]!==1'b1) begin
       match=-1; $display("FAIL: TX frame matched but pin_dir[0]=%b (pin not driven)", dut.e_pin_dir[0][0]);
     end
-    // Vision 19:58:50 ceiling: assert the FSTAT overrun status is wired to uo_out bit 3.
-    if (uo_out[3] !== dut.any_overrun)
-      $display("WARN: uo_out[3]=%b != any_overrun=%b (FSTAT status wiring)", uo_out[3], dut.any_overrun);
-    if (match>=0) $display("PASS cfg-loop: engine0 TX frame for 0x41 matches uart_ref at sample %0d (uo_out[3]=rx_overrun=%b)", match, uo_out[3]);
-    else begin
-      $display("FAIL cfg-loop: pin_dir0[0]=%b enable0=%b", dut.e_pin_dir[0][0], dut.enable[0]);
+    if (match>=0) $display("PASS cfg-loop: engine0 TX frame for 0x41 matches uart_ref at sample %0d", match);
+    else          $display("FAIL cfg-loop: pin_dir0[0]=%b enable0=%b", dut.e_pin_dir[0][0], dut.enable[0]);
+
+    // ---- phase 2: FSTAT overrun status THROUGH THE TOP (Gort 19:59:30 / Vision 19:58:50) ----
+    // Reload engine0 with 5x 'push noblock' (0x8000) + halt; 5 pushes fill the 4-deep RXF -> overrun.
+    send_frame(8'h02, {2'd0,4'd3,24'd0});        // SM0 ENABLE = 0 (reconfig)
+    for (i=0;i<5;i=i+1) send_frame(8'h01, (i<<16)|16'h8000);
+    send_frame(8'h01, (5<<16)|16'h0005);         // halt: jmp 5
+    send_frame(8'h02, {2'd0,4'd3,24'd1});        // SM0 ENABLE = 1
+    uio_in[6]=1'b0; repeat(20) @(negedge clk);
+    if (uo_out[3] !== 1'b1) begin
+      $display("FAIL fstat: 5x push noblock -> uo_out[3]=%b (expected 1), any_overrun=%b", uo_out[3], dut.any_overrun);
+      $finish;
     end
+    $display("PASS fstat: RXF overrun drives uo_out[3]=1 through the top (any_overrun=%b)", dut.any_overrun);
     $finish;
   end
 endmodule
