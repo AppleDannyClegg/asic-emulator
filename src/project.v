@@ -26,7 +26,7 @@
 `default_nettype none
 
 module tt_um_protocol_emulator #(
-    parameter integer NENG = 4   // number of pio_engine instances (3 = functional floor)
+    parameter integer NENG = 3   // number of pio_engine instances (3 = functional floor for concurrent UART+SPI+I2C)
 ) (
     input  wire [7:0] ui_in,
     output wire [7:0] uo_out,
