@@ -18,7 +18,7 @@
 `default_nettype none
 
 module pio_engine #(
-    parameter integer IMEM_AW = 6
+    parameter integer IMEM_AW = 5   // SPEC v0.4: 32-instruction bank per engine; JMP addr [4:0]
 ) (
     input  wire        clk,
     input  wire        rst_n,
@@ -54,6 +54,11 @@ module pio_engine #(
     // SHIFTCTRL: 0 = shift right (LSB-first, UART), 1 = shift left (MSB-first, SPI/I2C)
     input  wire        shift_left,
 
+    // PINCTRL side-set window (SPEC v0.4): [12:8] high `side_set_count` bits = side-set
+    input  wire [2:0]  side_set_count,
+    input  wire [2:0]  sideset_base,
+    input  wire [7:0]  open_drain,   // PINCTRL: driven-1 auto-releases this pin (I2C)
+
     output wire [3:0]  irq_flags,
     output wire [IMEM_AW-1:0] pc_out,
     output wire        stalled
@@ -72,7 +77,7 @@ module pio_engine #(
              OP_PUSH = 3'd4, OP_MOV = 3'd5, OP_IRQ = 3'd6, OP_SET = 3'd7;
 
   reg [31:0] osr, isr;
-  reg [7:0]  x, y;
+  reg [31:0] x, y;   // SPEC v0.4: X/Y are 32-bit
   reg [7:0]  pins, pindirs;
   reg [3:0]  irq;
 
@@ -115,19 +120,64 @@ module pio_engine #(
   // PUSH/PULL: PIO uses opA[7]=0 push / 1 pull (opA is 3 bits here, so use opB[7]? keep PIO's
   // encoding: the PUSH/PULL instruction's bit 7 distinguishes pull; we carry it in opA[2]).
   wire is_pull = opA[2];
-  wire is_block = 1'b1;  // M2.0: always blocking
+  wire is_block = opA[0];  // SPEC v0.4 PUSH/PULL [5]=block
 
   // shift helpers
   wire [5:0] out_n = (out_count == 0) ? 6'd1 : {2'b0, out_count};
   wire [5:0] in_n  = (in_count  == 0) ? 6'd1 : {2'b0, in_count};
 
+  // MOV source + op (SPEC v0.4): src 0 pins,1 x,2 y,3 null,4 rsvd,5 status,6 isr,7 osr
+  wire [31:0] mov_src = (opB[2:0] == 3'd0) ? {24'b0, pin_s} :
+                        (opB[2:0] == 3'd1) ? x :
+                        (opB[2:0] == 3'd2) ? y :
+                        (opB[2:0] == 3'd5) ? 32'd0 :
+                        (opB[2:0] == 3'd6) ? isr :
+                        (opB[2:0] == 3'd7) ? osr : 32'd0;
+  wire [31:0] move_val32 = (opB[4:3] == 2'd1) ? ~mov_src :
+                           (opB[4:3] == 2'd2) ? {mov_src[0],mov_src[1],mov_src[2],mov_src[3],mov_src[4],mov_src[5],mov_src[6],mov_src[7],
+                                                 mov_src[8],mov_src[9],mov_src[10],mov_src[11],mov_src[12],mov_src[13],mov_src[14],mov_src[15],
+                                                 mov_src[16],mov_src[17],mov_src[18],mov_src[19],mov_src[20],mov_src[21],mov_src[22],mov_src[23],
+                                                 mov_src[24],mov_src[25],mov_src[26],mov_src[27],mov_src[28],mov_src[29],mov_src[30],mov_src[31]} : mov_src;
+
+  // IN source (SPEC v0.4): 0 pins (in_base window), 6 isr, 7 osr
+  wire [31:0] in_data = (opA == 3'd6) ? isr : (opA == 3'd7) ? osr : {24'b0, (pin_s >> in_base)};
+
+  // WAIT (SPEC v0.4): A[2]=pol, A[1:0]=src (0 gpio,1 pin,2 irq), B[2:0]=index
+  wire wait_pol = opA[2];
+  wire [7:0] wait_val = (opA[1:0] == 2'd0) ? pin_s :
+                        (opA[1:0] == 2'd1) ? (pin_s >> in_base) :
+                        {4'b0, irq};
+  wire wait_ok = (wait_val[opB[2:0]] == wait_pol);
+
+  // delay + side-set field [12:8] (SPEC v0.4): top side_set_count bits = side-set value,
+  // low (5 - side_set_count) bits = integer delay in engine cycles.
+  wire [4:0] ss_shift = 5'd5 - {2'b0, side_set_count};
+  wire [4:0] sideset_val = (side_set_count == 3'd0) ? 5'd0 : (instr[12:8] >> ss_shift);
+  wire [4:0] delay_val  = (instr[12:8] & (5'd1 << ss_shift) - 5'd1);
+  reg [4:0]  delay_cnt;
+
   integer i;
   always @(posedge clk or negedge rst_n) begin
     if (!rst_n) begin
       pc <= 0; osr <= 0; isr <= 0; x <= 0; y <= 0; pins <= 0; pindirs <= 0; irq <= 0;
-      txf_cnt <= 0; rxf_cnt <= 0;
-    end else if (enable && tick) begin
+      txf_cnt <= 0; rxf_cnt <= 0; delay_cnt <= 5'd0;
+    end else begin
+      // host TXF push (every clock), SINGLE writer; skipped when the engine pulls this cycle
+      if (txf_we && txf_cnt != 4 && !(enable && tick && op == OP_PUSH && is_pull && txf_cnt != 0)) begin
+        txf[txf_cnt] <= txf_wdata;
+        txf_cnt <= txf_cnt + 1'b1;
+      end
+      if (enable && tick) begin
+      // delay [12:8] low bits: hold for `delay_val` extra engine cycles (SPEC v0.4)
+      if (delay_cnt != 5'd0) begin
+        delay_cnt <= delay_cnt - 5'd1;
+      end else begin
+      delay_cnt <= delay_val;
       pc <= pc + 1'b1;
+      // side-set: drive the side-set pin window every engine cycle (SPEC v0.4)
+      for (i = 0; i < 8; i = i + 1)
+        if (i >= sideset_base && (i - sideset_base) < side_set_count)
+          pins[i] <= sideset_val[i - sideset_base];
       case (op)
         OP_SET: begin
           case (opA)
@@ -138,7 +188,7 @@ module pio_engine #(
             end
             3'd1: x <= opB;
             3'd2: y <= opB;
-            3'd3: begin // SET pindirs, imm -> SAME window (was: pindirs <= opB, clobbered all 8)
+            3'd4: begin // SET pindirs, imm (SPEC v0.4: A=4) -> SAME window as SET PINS
               for (i = 0; i < 8; i = i + 1)
                 if (i >= set_base && (i - set_base) < set_count && (i - set_base) < 5)
                   pindirs[i] <= opB[i - set_base];
@@ -147,10 +197,10 @@ module pio_engine #(
           endcase
         end
         OP_MOV: begin
-          // opA = dest (1=x, 2=y); opB[2:0] = src (1=x, 2=y, 3=pins); opB[4:3] = op (0 none, 1 !, 2 ::)
+          // dst A: 1=x, 2=y (others M2.1). src B[2:0] + op B[4:3] per SPEC v0.4.
           case (opA)
-            3'd1: x <= move_val((opB[2:0] == 3'd2) ? y : (opB[2:0] == 3'd3) ? pin_s : x, opB[4:3]);
-            3'd2: y <= move_val((opB[2:0] == 3'd1) ? x : (opB[2:0] == 3'd3) ? pin_s : y, opB[4:3]);
+            3'd1: x <= move_val32;
+            3'd2: y <= move_val32;
             default: ;
           endcase
         end
@@ -174,12 +224,10 @@ module pio_engine #(
         end
         OP_IN: begin
           // IN pins, n -> isr = (isr >> in_count) | (pin_window << (32-in_count))
-          // Read the in_base..in_base+in_count window from the SYNCHRONISED pins, then shift
-          // ISR in the SHIFTCTRL direction. Right (LSB-first): new bits enter at the MSB.
-          // Left (MSB-first): new bits enter at the LSB.
+          // src A (SPEC v0.4): 0 pins (in_base window), 6 isr, 7 osr. Shift ISR per SHIFTCTRL.
           isr <= shift_left
-                 ? ((isr << in_n) | ({{(32-8){1'b0}}, (pin_s >> in_base)} & ((32'd1 << in_n) - 32'd1)))
-                 : ((isr >> in_n) | ({{(32-8){1'b0}}, (pin_s >> in_base)} << (32 - in_n)));
+                 ? ((isr << in_n) | (in_data & ((32'd1 << in_n) - 32'd1)))
+                 : ((isr >> in_n) | (in_data << (32 - in_n)));
         end
         OP_PUSH: begin
           if (is_pull) begin
@@ -187,9 +235,11 @@ module pio_engine #(
               osr <= txf[0];
               for (i = 0; i < 3; i = i + 1) txf[i] <= txf[i+1];
               txf_cnt <= txf_cnt - 1'b1;
-            end else begin
-              irq[0] <= 1'b1;   // stall (blocking pull, empty FIFO)
+            end else if (is_block) begin
+              irq[0] <= 1'b1;   // block: stall (empty FIFO)
               pc <= pc;
+            end else begin
+              irq[0] <= 1'b1;   // noblock: proceed with the stale OSR
             end
           end else begin
             if (rxf_cnt != 4) begin
@@ -210,24 +260,27 @@ module pio_engine #(
             default: ;
           endcase
         end
-        default: ; // WAIT / IRQ: M2.1
+        OP_WAIT: begin
+          // WAIT (SPEC v0.4): A[2]=pol, A[1:0]=src (0 gpio,1 pin,2 irq), B[2:0]=index
+          if (!wait_ok) pc <= pc;      // stall until the condition holds
+        end
+        OP_IRQ: begin
+          // A[2]=wait, A[1]=clear, A[0]=relative, B[2:0]=index
+          if (opA[2]) begin if (!irq[opB[2:0]]) pc <= pc; end
+          else if (opA[1]) irq[opB[2:0]] <= 1'b0;
+          else             irq[opB[2:0]] <= 1'b1;
+        end
+        default: ;
       endcase
-    end
-  end
-
-  // TX FIFO host write
-  always @(posedge clk or negedge rst_n) begin
-    if (!rst_n) ;
-    else if (txf_we && txf_cnt != 4) begin
-      txf[txf_cnt] <= txf_wdata;
-      txf_cnt <= txf_cnt + 1'b1;
+      end          // delay gate
+      end          // enable && tick
     end
   end
 
   assign pin_out   = pins;
-  assign pin_dir   = pindirs;
+  assign pin_dir   = pindirs & ~(open_drain & pins);  // OPEN_DRAIN: driven-1 -> release
   assign irq_flags = irq;
   assign pc_out    = pc;
-  assign stalled   = enable && (op == OP_PUSH) && is_pull && (txf_cnt == 0);
+  assign stalled   = enable && (op == OP_PUSH) && is_pull && is_block && (txf_cnt == 0);
 
 endmodule
