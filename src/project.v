@@ -64,6 +64,8 @@ module tt_um_protocol_emulator #(
   wire [7:0]  e_pin_out [0:NENG-1];
   wire [7:0]  e_pin_dir [0:NENG-1];
   wire [7:0]  e_irq     [0:NENG-1];
+  wire        e_overrun  [0:NENG-1];   // engine sticky FIFO-overrun status (FSTAT.RXOVER), not a user IRQ
+  wire        any_overrun;
   wire        e_txf_full[0:NENG-1];
   wire        e_stalled [0:NENG-1];
   wire [4:0]  e_pc      [0:NENG-1];
@@ -109,7 +111,7 @@ module tt_um_protocol_emulator #(
         .side_set_count(side_set_count[g]), .sideset_base(sideset_base[g]),
         .open_drain(open_drain[g]),
         .jmp_pin(1'b0),
-        .irq_flags(e_irq[g]), .pc_out(e_pc[g]), .stalled(e_stalled[g])
+        .irq_flags(e_irq[g]), .rx_overrun(e_overrun[g]), .pc_out(e_pc[g]), .stalled(e_stalled[g])
       );
     end
   endgenerate
@@ -216,8 +218,14 @@ module tt_um_protocol_emulator #(
   assign uio_out = {cfg_done, engine_pin_out[6:0]};
   assign uio_oe  = {1'b1, engine_pin_dir[6:0]};
 
-  // status on uo_out
-  assign uo_out  = {e_irq[0][0], e_stalled[0], e_pc[0]};
+  // status on uo_out: [0]=e0 irq0, [1]=e0 stalled, [2]=e0 pc0, [3]=any-engine FSTAT overrun (RXOVER)
+  reg any_overrun;
+  integer oi;
+  always @* begin
+    any_overrun = 1'b0;
+    for (oi = 0; oi < NENG; oi = oi + 1) any_overrun = any_overrun | e_overrun[oi];
+  end
+  assign uo_out  = {4'b0, any_overrun, e_pc[0], e_stalled[0], e_irq[0][0]};
 
   // unused
   wire _unused = &{ena, ui_in, e_txf_full[0], 1'b0};
