@@ -1,16 +1,17 @@
 # Protocol programs — first drafts (TARS, firmware slice)
 
-ISA-agnostic first drafts for the PIO-style engines, written against Legion's proposed
-16-bit PIO-proven ISA (board 17:14:35): `JMP / WAIT / IN / OUT / PUSH-PULL / MOV / IRQ / SET`,
-side-set + delay in bits [7:5], per-engine OSR/ISR (32-bit), X/Y scratch, 4-deep FIFOs,
-16-bit clock divider. Port to the frozen ISA once ARCH/ISA confirms.
+First drafts for the PIO-style engines, written against Legion's ISA (board 17:14:35, corrected
+17:19:42): 16-bit RP2040-PIO layout `[15:13] opcode / [12:8] delay+side-set (5-bit, max 31)
+/ [7:5] operand-A / [4:0] operand-B`; `JMP / WAIT / IN / OUT / PUSH-PULL / MOV / IRQ / SET`;
+per-engine OSR/ISR (32-bit), X/Y scratch, 4-deep FIFOs, **per-SM 16-bit clock divider
+(int+frac)**, per-SM **shift direction** (right=LSB-first for UART, left=MSB-first for
+SPI/I2C). Port to real assembly once Cerebro/Ash confirm the freeze.
 
-Timing model assumed: **1 instruction/cycle**; `[n]` = n extra delay cycles; the engine's
-clock divider makes one engine cycle = `div` system clocks. So a bit period of `T` system
-clocks = `T/div` engine cycles, and the per-instruction delay `[d]` is chosen so that
-`(1 + d)` engine cycles = the required span. **All `[d]` values below are placeholders** —
-they are a function of `div`, `clock_hz` and the protocol rate, and must be computed, not
-hardcoded (see "Timing" below).
+Timing model: **1 instruction/cycle**; `[n]` = n extra delay cycles (5-bit field, max 31);
+the per-SM clock divider makes one engine cycle = `div` system clocks. So a bit period of
+`T` system clocks = `T/div` engine cycles. **The divider is the primary timing knob** — `[d]`
+is only fine trim (max 31). Do not hardcode `[d]`; compute `div` from `clock_hz`/rate
+(see "Timing").
 
 Convention: TX/MOSI/SCL/SDA are side-set pins; the side-set field drives them on every
 instruction (PIO side-set). RX/MISO are read with `IN pins`.
@@ -87,19 +88,20 @@ bit_loop:
 ```
 
 Notes:
-- **MSB-first is the gotcha.** PIO `OUT` shifts LSB-first. For MSB-first either
-  (a) `MOV` with the `reverse` modifier to bit-reverse the OSR before shifting, or
-  (b) shift the OSR left and read bit 7 into X, or (c) define the protocol program with a
-  bit-reversed input word. Recommend (a): `mov osr, !osr` style reverse in the PIO ISA.
+- **MSB-first is handled by the engine's shift direction** (Legion 17:19:42): set this SM's
+  SHIFTCTRL shift-direction to *left* (MSB-first). No software reverse loop, no pre-reversed
+  word. UART uses the default *right* (LSB-first) on its engine.
 - Mode 1/2/3 differ only in clock polarity/phase: swap which `set pins` drives the sample
   edge. Parameterise with side-set/`set` rather than duplicating the program.
 - CS is per-transfer here; a multi-byte device select wraps several `spi_txrx` calls.
 
 ## 4. I2C master (7-bit address, standard mode)
 
-Open-drain: SCL/SDA are outputs driven low for 0 and released (input, pulled up) for 1.
-In the engine model this means switching `pindirs` for the 1/0 phases (or a tri-state
-side-set), because I2C has no push-pull high.
+Open-drain: SCL/SDA are driven low for 0 and released (input, pulled up) for 1. Legion
+17:19:42: no native open-drain; firmware does it with `SET PINDIRS` (drive low = pindir out
++ `SET PINS 0`; release = pindir in). Because that costs cycles at 400 kHz, a per-pin
+`OPEN_DRAIN` mode bit in PINCTRL is proposed ("do differently") so a pin auto-releases when
+driven 1 — if that lands, the programs below simplify to a single side-set per bit.
 
 ```
 ; START: SDA 1->0 while SCL high
@@ -144,18 +146,74 @@ Given `clock_hz` (e.g. 50 MHz) and protocol rate `baud`:
   works at any rate. A `SET` of a scratch register + `JMP X--` delay loop is the portable
   form; `[d]` is only exact for one (rate, clock) pair.
 
-## Open questions for ARCH/ISA (blocking exact encodings)
+## ISA answers (Legion 17:19:42) — resolved
 
-1. **Bit order**: does `OUT`/`IN` support a `reverse` modifier (needed for SPI/I2C MSB-first)?
-2. **Open-drain**: is there a per-pin `pindirs`/tri-state side-set for I2C, or must the
-   sequencer emulate it?
-3. **Delay encoding**: is `[d]` a fixed 3-bit field (max 7)? If so, long bit periods need a
-   divider or a `JMP X--` delay loop — confirm which.
-4. **FIFO depth/back-pressure**: `pull block` vs `noblock` semantics, and RX overrun policy.
-5. **Program load**: how the sequencer writes engine IMEM + initialises PC/divider/pin map.
+1. **Bit order** — per-SM SHIFTCTRL shift direction (right=LSB UART, left=MSB SPI/I2C);
+   `MOV` also has a bit-reverse variant for odd cases. No per-instruction reverse needed.
+2. **Open-drain** — no native mode; firmware uses `SET PINDIRS`. Proposed PINCTRL
+   `OPEN_DRAIN` bit would remove the cycle cost at 400 kHz.
+3. **Delay** — 5-bit field (max 31); long periods come from the 16-bit per-SM divider
+   (int+frac), not the delay field.
+4. **FIFO** — block/noblock + ifempty/iffull, optional autopull/autopush thresholds.
+   UART RX: blocking PUSH back-pressures (correct); lossy sources use noblock.
+5. **Program load** — sequencer config port (IMEM/PC/divider/pin map); see board 17:20:16
+   for the memory-mapped `{engine_id, reg, value}` proposal.
+
+Remaining to confirm before freeze: Cerebro/Ash review of the corrected ISA, the PINCTRL
+open-drain bit, and the config-port shape.
 
 ## Next
 
 - Milestone 1 is RTL (UART TX hardcoded on a pin). The UART TX program above is the
   firmware equivalent once the engine exists; it is the acceptance test for the ISA.
 - Port each program to real assembly when the ISA freezes (Legion/Cerebro/Ash review).
+
+---
+
+## Concrete UART TX for ISA v0.1 (TARS, Legion 17:20:37 freeze)
+
+Field layout: `[15:13] opcode | [12:8] delay/side-set | [7:5] operand-A | [4:0] operand-B`.
+Side-set takes the MSBs of `[12:8]`; with `side_count = 1` (drive the TX pin each
+instruction) the side-set bit is `[12]` and the delay is `[11:8]` (0-15). Opcodes:
+`JMP=000 WAIT=001 IN=010 OUT=011 PUSH-PULL=100 MOV=101 IRQ=110 SET=111`.
+
+Program (TX pin = side-set bit 0; `div` set for the bit period; `T` = engine cycles/bit):
+
+```
+; --- uart_tx (8N1), side-set = TX pin, shift direction RIGHT (LSB-first) ---
+    pull block              ; OSR <- TX FIFO
+    set pindirs, 1          ; TX pin = output
+    set x, 7                ; 8 data bits
+    set pins, 0 [T-2]       ; START (0)
+data:
+    out pins, 1 [T-2]       ; shift OSR bit0 -> TX
+    jmp x-- data [T-2]      ; loop 8x
+    set pins, 1 [T-2]       ; STOP (1)
+    jmp uart_tx             ; next byte
+```
+
+Field breakdown (side_count=1, delay d, side bit s):
+
+| # | mnemonic            | op  | side+delay [12:8] | A [7:5]        | B [4:0]        |
+|---|---------------------|-----|-------------------|----------------|----------------|
+| 0 | `pull block`        | 100 | `s:d`             | `000` block    | `000` PULL     |
+| 1 | `set pindirs, 1`    | 111 | `s:0`             | `100` pindirs  | `00001`        |
+| 2 | `set x, 7`          | 111 | `s:0`             | `001` x        | `00111`        |
+| 3 | `set pins, 0 [T-2]` | 111 | `s:(T-2)`         | `000` pins     | `00000`        |
+| 4 | `out pins, 1 [T-2]` | 011 | `s:(T-2)`         | `000` pins     | `00001`        |
+| 5 | `jmp x-- data [T-2]`| 000 | `s:(T-2)`         | `010` x--      | `<data addr>`  |
+| 6 | `set pins, 1 [T-2]` | 111 | `s:(T-2)`         | `000` pins     | `00001`        |
+| 7 | `jmp uart_tx`       | 000 | `s:0`             | `000` always   | `0`            |
+
+Constraints / open items for the encoder:
+- `[d]` is 4 bits when `side_count=1` (max 15). A 115200 baud bit at a 50 MHz engine
+  needs `T = 50e6/(115200*div)`; with `div=8`, `T≈54` engine cycles — **larger than 15**,
+  so the per-bit span must come from `div` (engine cycles), not `[d]`. Set `div` so that
+  `T = 1 + d` for a small `d` (e.g. `div = clock_hz/(baud*T)` with `T=8`, `d=6`).
+- Exact `operand-A`/`operand-B` codes follow the frozen tables (PIO-style); the values
+  above are the intended meanings, to be checked against the assembler once written.
+- If `side_count=0`, the TX pin must be driven by `SET PINS`/`OUT PINS` and the full
+  5-bit `[12:8]` becomes delay — simpler timing, one extra instruction per bit.
+
+Next: a tiny assembler (`firmware/asm.py`) that emits the 16-bit words for this program
+and a disassembler round-trip test, once Cerebro/Ash confirm the operand tables.

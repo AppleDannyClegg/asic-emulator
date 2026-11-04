@@ -20,7 +20,7 @@ module tb ();
   wire [7:0] uio_out;
   wire [7:0] uio_oe;
 
-  tt_um_example #(.CLK_HZ(1_000_000), .BAUD(100_000)) user_project (
+  tt_um_protocol_emulator #(.CLK_HZ(1_000_000), .BAUD(100_000)) user_project (
       .ui_in  (ui_in),
       .uo_out (uo_out),
       .uio_in (uio_in),

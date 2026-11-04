@@ -14,7 +14,7 @@
 
 `default_nettype none
 
-module tt_um_example #(
+module tt_um_protocol_emulator #(
     parameter integer CLK_HZ = 50_000_000,  // TT clock (config.json CLOCK_PERIOD=20ns)
     parameter integer BAUD   = 115_200
 ) (
