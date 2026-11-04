@@ -12,14 +12,14 @@ module tb_uart_program;
   reg rxf_re=0; wire [31:0] rxf_rdata; wire rxf_empty;
   reg [7:0] pin_in=8'hFF; wire [7:0] pin_out, pin_dir;
   reg [2:0] in_base=0, out_base=0, set_base=0; reg [3:0] set_count=1,out_count=1,in_count=1;
-  reg shift_left=0; reg [2:0] side_set_count=0, sideset_base=0; reg [7:0] open_drain=0;
+  reg shift_left=0; reg [2:0] side_set_count=0, sideset_base=0; reg [7:0] open_drain=0; reg jmp_pin=0;
   wire [3:0] irq_flags; wire [4:0] pc_out; wire stalled;
   pio_engine #(.IMEM_AW(5)) dut(.clk(clk),.rst_n(rst_n),.imem_we(imem_we),.imem_addr(imem_addr),
     .imem_wdata(imem_wdata),.enable(enable),.clkdiv(clkdiv),.txf_we(txf_we),.txf_wdata(txf_wdata),
     .txf_full(txf_full),.rxf_re(rxf_re),.rxf_rdata(rxf_rdata),.rxf_empty(rxf_empty),.pin_in(pin_in),
     .pin_out(pin_out),.pin_dir(pin_dir),.in_base(in_base),.out_base(out_base),.set_base(set_base),
     .set_count(set_count),.out_count(out_count),.in_count(in_count),.shift_left(shift_left),
-    .side_set_count(side_set_count),.sideset_base(sideset_base),.open_drain(open_drain),
+    .side_set_count(side_set_count),.sideset_base(sideset_base),.open_drain(open_drain),.jmp_pin(jmp_pin),
     .irq_flags(irq_flags),.pc_out(pc_out),.stalled(stalled));
   always #5 clk=~clk;
   integer words [0:7];

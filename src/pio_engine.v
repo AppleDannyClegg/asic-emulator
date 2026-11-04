@@ -58,6 +58,7 @@ module pio_engine #(
     input  wire [2:0]  side_set_count,
     input  wire [2:0]  sideset_base,
     input  wire [7:0]  open_drain,   // PINCTRL: driven-1 auto-releases this pin (I2C)
+    input  wire        jmp_pin,      // EXECCTRL JMP_PIN: value for the JMP PIN condition
 
     output wire [3:0]  irq_flags,
     output wire [IMEM_AW-1:0] pc_out,
@@ -148,6 +149,9 @@ module pio_engine #(
                         (opA[1:0] == 2'd1) ? (pin_s >> in_base) :
                         {4'b0, irq};
   wire wait_ok = (wait_val[opB[2:0]] == wait_pol);
+
+  // JMP target: 5-bit within-bank address (opB[4:0]); zero-extended to the PC width.
+  wire [4:0] jaddr = opB[4:0];
 
   // delay + side-set field [12:8] (SPEC v0.4): top side_set_count bits = side-set value,
   // low (5 - side_set_count) bits = integer delay in engine cycles.
@@ -252,11 +256,14 @@ module pio_engine #(
         end
         OP_JMP: begin
           case (opA)
-            3'd0: pc <= opB[IMEM_AW-1:0];
-            3'd1: if (x == 0) pc <= opB[IMEM_AW-1:0];
-            3'd2: begin if (x != 0) pc <= opB[IMEM_AW-1:0]; x <= x - 1'b1; end
-            3'd3: if (y == 0) pc <= opB[IMEM_AW-1:0];
-            3'd4: begin if (y != 0) pc <= opB[IMEM_AW-1:0]; y <= y - 1'b1; end
+            3'd0: pc <= jaddr;
+            3'd1: if (x == 0) pc <= jaddr;
+            3'd2: begin if (x != 0) pc <= jaddr; x <= x - 1'b1; end
+            3'd3: if (y == 0) pc <= jaddr;
+            3'd4: begin if (y != 0) pc <= jaddr; y <= y - 1'b1; end
+            3'd5: if (x != y) pc <= jaddr;
+            3'd6: if (jmp_pin) pc <= jaddr;
+            3'd7: ;  // !OSRE needs the OSR bit count (autopull) - NOT implemented (flagged)
             default: ;
           endcase
         end
