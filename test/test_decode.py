@@ -191,3 +191,65 @@ async def jmp_target_is_defined(dut):
     await run(dut, "jmp always, here\nset x, 1\nhere:\n    set y, 2", cycles=6)
     pc = dut.pc_out.value
     assert pc.is_resolvable, f"pc_out={pc} after a taken JMP (X/Z bits)"
+
+
+# ---- IRQ / WAIT irq (SPEC §8: 8 shared flags, index 0..7; SPEC §3 row "IRQ") ----
+
+def irqs(dut):
+    return int(dut.irq_flags.value)
+
+
+@engine_test
+async def irq_set_idx7(dut):
+    await run(dut, "irq set, abs, 7")
+    assert irqs(dut) == 0x80, f"irq_flags={irqs(dut):#04x} (idx 7 must be in range - 8 flags)"
+
+
+@engine_test
+async def irq_clear_only_its_flag(dut):
+    await run(dut, "irq set, abs, 5\nirq set, abs, 3\nirq clear, abs, 5")
+    assert irqs(dut) == 0x08, f"irq_flags={irqs(dut):#04x}"
+
+
+@engine_test
+async def wait_irq_released_when_set(dut):
+    await run(dut, "irq set, abs, 6\nwait irq, 1, 6\nset x, 1")
+    assert reg(dut, "x") == 1, "WAIT irq,1,6 did not release with flag 6 set"
+
+
+@engine_test
+async def wait_irq_blocks_when_clear(dut):
+    await run(dut, "wait irq, 1, 6\nset x, 1", cycles=8)
+    assert reg(dut, "x") == 0, "WAIT irq,1,6 ran past a clear flag"
+
+
+@engine_test
+async def fifo_stall_does_not_raise_user_irq0(dut):
+    # A blocking PULL on an empty TX FIFO is a stall (SPEC §7), not an IRQ. Firmware owns IRQ 0..7;
+    # an engine that waits on IRQ 0 must not be woken by another engine's FIFO stall.
+    # Ruling: Legion 19:45:12 / Weyland 19:45:18 - stall is STATUS (stalled=1), never a user IRQ.
+    await run(dut, "pull block", cycles=6)
+    assert irqs(dut) == 0, f"irq_flags={irqs(dut):#04x}: FIFO stall set a user IRQ"
+    assert int(dut.pc_out.value) == 0, "engine did not stay on the blocking PULL"
+    dut.enable.value = 1          # `stalled` is qualified by enable; run() leaves it low
+    await RisingEdge(dut.clk)
+    assert int(dut.stalled.value) == 1, "blocking PULL on empty TXF is not reported as stalled"
+    assert irqs(dut) == 0, f"irq_flags={irqs(dut):#04x} while stalled"
+
+
+@engine_test
+async def rx_overrun_does_not_raise_user_irq0(dut):
+    # Five pushes into a 4-deep RX FIFO overrun it (SPEC §7: drop + sticky overrun status).
+    # Overrun is FIFO status, not a user IRQ (Cerebro 19:43:48): irq_flags must stay 0.
+    # Ruling Legion 19:45:12: overrun -> sticky FSTAT.OVERRUN, not IRQ 0..7. A NOBLOCK push on a full
+    # RX FIFO drops the word and does not stall (SPEC §7), so no `stalled` check here.
+    await run(dut, "push noblock\npush noblock\npush noblock\npush noblock\npush noblock", cycles=10)
+    assert int(dut.rxf_empty.value) == 0, "pushes did not reach the RX FIFO"
+    assert irqs(dut) == 0, f"irq_flags={irqs(dut):#04x}: RX overrun set a user IRQ"
+    assert reg(dut, "fstat_overrun") == 1, "5th push into a 4-deep RX FIFO did not set sticky fstat_overrun"
+
+
+@engine_test
+async def rx_no_overrun_when_not_full(dut):
+    await run(dut, "push noblock\npush noblock\npush noblock\npush noblock", cycles=10)
+    assert reg(dut, "fstat_overrun") == 0, "fstat_overrun set by 4 pushes into a 4-deep RX FIFO"

@@ -16,7 +16,7 @@ module tb_decode ();
   wire txf_full, rxf_empty, stalled;
   wire [31:0] rxf_rdata;
   wire [7:0] pin_out, pin_dir;
-  wire [3:0] irq_flags;
+  wire [7:0] irq_flags;   // SPEC §8: 8 IRQ flags
   wire [4:0] pc_out;
 
   pio_engine #(.IMEM_AW(5)) dut (   // SPEC v0.4: 32-instruction bank

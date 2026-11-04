@@ -62,7 +62,8 @@ module pio_engine #(
     input  wire [7:0]  open_drain,   // PINCTRL: driven-1 auto-releases this pin (I2C)
     input  wire        jmp_pin,      // EXECCTRL JMP_PIN: value for the JMP PIN condition
 
-    output wire [7:0]  irq_flags,   // SPEC §8: 8 shared IRQ flags (idx 0..7)
+    output wire [7:0]  irq_flags,
+    output reg         fstat_overrun,   // sticky FIFO-overrun status (RP2040 FDEBUG.RXOVER), NOT a user IRQ
     output wire [IMEM_AW-1:0] pc_out,
     output wire        stalled
 );
@@ -168,7 +169,7 @@ module pio_engine #(
   integer i;
   always @(posedge clk or negedge rst_n) begin
     if (!rst_n) begin
-      pc <= 0; osr <= 0; isr <= 0; x <= 0; y <= 0; pins <= 0; pindirs <= 0; irq <= 0;
+      pc <= 0; osr <= 0; isr <= 0; x <= 0; y <= 0; pins <= 0; pindirs <= 0; irq <= 0; fstat_overrun <= 1'b0;
       txf_cnt <= 0; rxf_cnt <= 0; delay_cnt <= 5'd0;
     end else begin
       // host TXF push (every clock), SINGLE writer; skipped when the engine pulls this cycle
@@ -245,17 +246,16 @@ module pio_engine #(
               for (i = 0; i < FIFO_DEPTH-1; i = i + 1) txf[i] <= txf[i+1];
               txf_cnt <= txf_cnt - 1'b1;
             end else if (is_block) begin
-              irq[0] <= 1'b1;   // block: stall (empty FIFO)
-              pc <= pc;
+              pc <= pc;         // block: stall (no IRQ - a stall is not a user interrupt)
             end else begin
-              irq[0] <= 1'b1;   // noblock: proceed with the stale OSR
+              ;                 // noblock: proceed with the stale OSR (no IRQ)
             end
           end else begin
             if (rxf_cnt != FIFO_DEPTH[FCW-1:0]) begin
               rxf[rxf_cnt] <= isr;
               rxf_cnt <= rxf_cnt + 1'b1;
             end else begin
-              irq[0] <= 1'b1;   // overrun
+              fstat_overrun <= 1'b1;   // sticky overrun status (FDEBUG.RXOVER), NOT a user IRQ
             end
           end
         end
