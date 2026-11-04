@@ -44,9 +44,9 @@ SET_DST = {"pins": 0b000, "x": 0b001, "y": 0b010, "pindirs": 0b100}
 # MOV dst: 0 pins, 1 x, 2 y, 3 null, 4 exec, 5 pc, 6 isr, 7 osr
 MOV_DST = {"pins": 0b000, "x": 0b001, "y": 0b010, "null": 0b011,
            "exec": 0b100, "pc": 0b101, "isr": 0b110, "osr": 0b111}
-# MOV src: 0 pins, 1 x, 2 y, 3 null, 4 status, 5 isr, 6 osr, 7 exec
+# MOV src B[2:0]: 0 pins, 1 x, 2 y, 3 null, 4 reserved, 5 status, 6 isr, 7 osr
 MOV_SRC = {"pins": 0b000, "x": 0b001, "y": 0b010, "null": 0b011,
-           "status": 0b100, "isr": 0b101, "osr": 0b110, "exec": 0b111}
+           "status": 0b101, "isr": 0b110, "osr": 0b111}
 
 
 class AsmError(Exception):
@@ -89,8 +89,9 @@ def encode(instr: str, labels: dict[str, int], addr: int, side_count: int) -> in
     operand = 0
     if op in ("push", "pull"):
         block = 1 if (len(parts) > 1 and parts[1].lower() == "block") else 0
-        # [7] block, [6] iffull/ifempty (0), [5] push=1 / pull=0
-        operand = (block << 7) | ((1 if op == "push" else 0) << 5)
+        # SPEC v0.4 (true RP2040): [7]=0 push / 1 pull, [6]=iffull/ifempty, [5]=block(1)/noblock(0)
+        is_pull = 1 if op == "pull" else 0
+        operand = (is_pull << 7) | (block << 5)
     elif op == "set":
         dst = _lookup(SET_DST, parts[1].lower(), "SET dst")
         imm = int(parts[2], 0)
@@ -134,9 +135,12 @@ def encode(instr: str, labels: dict[str, int], addr: int, side_count: int) -> in
         operand = (dst << 5) | (mop << 3) | src
     elif op == "wait":
         src = _lookup(WAIT_SRC, parts[1].lower(), "WAIT src")
-        pol = int(parts[2], 0) & 1
+        pol = int(parts[2], 0)
+        if not 0 <= pol <= 1:
+            raise AsmError(f"WAIT polarity {pol} out of range 0..1")
         idx = int(parts[3], 0) & 0x1F
-        operand = (src << 6) | (pol << 5) | idx
+        # SPEC v0.4 (true RP2040): [7]=polarity, [6:5]=src, [4:0]=index
+        operand = (pol << 7) | (src << 5) | idx
     elif op == "irq":
         mode = parts[1].lower()
         rest = parts[2:]

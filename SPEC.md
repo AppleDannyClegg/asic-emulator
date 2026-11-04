@@ -82,6 +82,9 @@ asm/RTL divergence Gort found — do not invent codes.
 PIO test vectors apply): WAIT `[7]`=pol/`[6:5]`=src; PUSH/PULL `[7]`=0 push/1 pull/`[5]`=block;
 MOV src `4`=reserved/`5`=status/`6`=isr/`7`=osr.
 
+**Deviation (stated, not RP2040):** the `IRQ` instruction uses our own layout — `A[2]`=wait,
+`A[1]`=clear, `A[0]`=relative, `B[2:0]`=index (0..7). Do **not** assume `pioasm` IRQ encodings apply.
+
 **Delay field decode (normative):** `[12:8]` = side-set value in the **top** `side_set_count` bits,
 followed by delay in the low `5 - side_set_count` bits. The integer delay = that many engine cycles.
 RTL MUST decode this field (it is part of the ISA, not a comment).
@@ -143,7 +146,7 @@ e.g. SPI-master + chip-select engine). Rel/abs addressing as in PIO.
 
 Register-mapped control port (inside the chip):
 
-- `IMEM_WRITE` (`addr[5:0]`, `instr[15:0]`)
+- `IMEM_WRITE` (`addr[6:0]` = bank `[6:5]` + offset `[4:0]`, `instr[15:0]`)
 - `SMx_CLKDIV`, `SMx_EXECCTRL`, `SMx_SHIFTCTRL`, `SMx_PINCTRL`
 - `SMx_ENABLE`, `SMx_PC`, `TXF_PUSH`, `RXF_POP`, `IRQ_CLEAR`
 
@@ -154,12 +157,16 @@ Register-mapped control port (inside the chip):
 - frame: `cmd[7:0]` + `payload[31:0]` (cmd selects IMEM write / SM register / enable / done)
 - at runtime `cfg_load=0` and all 8 GPIO are free for protocols.
 
-This is the **one open ARCH choice**: share `uio[7:4]` (proposed) vs reserve 4 dedicated config pins.
+**DECIDED:** share `uio[7:4]` (all 8 GPIO free at runtime). `cfg_din` is **bidirectional**
+(`uio[5]` = cfg_din/cfg_dout): write cmds drive the chip, read cmds make the chip drive it. The config
+FSM sets `uio_oe[5]` for reads only; at runtime the engine owns the pin. **Turn-around gap required:**
+the host must release `uio[5]` before the chip drives it on a read command (fixed half-phase rule) so
+the two never drive the same pin in one `cfg_clk` phase.
 
 ## 10. Area plan
 
-Budget ~24K cells. Rough allocation: 4 engines + shared 64×16 IMEM (SRAM) + FIFOs + sequencer.
-Fixtures to keep in check: 64×16 IMEM as **SRAM**, not flops; 4-deep FIFOs; shared IMEM.
+Budget ~24K cells. Rough allocation: 4 engines + 4×32×16 (128×16) IMEM (SRAM) + FIFOs + sequencer.
+Fixtures to keep in check: 128×16 IMEM as **SRAM**, not flops; 4-deep FIFOs; per-engine banks.
 **Fallback order if over budget:** 4 → 2 engines → drop sequencer to a fixed FSM.
 
 ## 11. What we do differently (competition differentiators)
@@ -172,7 +179,7 @@ Fixtures to keep in check: 64×16 IMEM as **SRAM**, not flops; 4-deep FIFOs; sha
 
 ## 12. Open items
 
-- Cerebro/Ash: confirm encoding field widths, IMEM 64×16 vs 2×32, 4 vs 2 engines for area.
+- Cerebro/Ash: confirm encoding field widths and 4 vs 2 engines for area. (IMEM resolved: 4×32×16, one bank per engine.)
 - Config port: shared `uio[7:4]` vs dedicated pins.
 - Milestone 1 (UART TX) proceeds independently on the template (Vision/Wheatley).
 

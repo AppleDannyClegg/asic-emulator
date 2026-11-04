@@ -2,10 +2,10 @@
 """Encoding conformance for firmware/asm.py against the numeric operand tables (Gort).
 
 Expected words are written out by hand from the table TARS posted at 17:31:15 on 4 Nov 2026
-(frozen as SPEC.md §3 v0.3.1), not computed from asm.py's own dictionaries, so a wrong entry in asm.py fails here.
+(frozen as SPEC.md §3 v0.4), not computed from asm.py's own dictionaries, so a wrong entry in asm.py fails here.
 
-The table is SPEC.md §3 "Numeric selector codes (NORMATIVE)", v0.3.1 (Legion 17:31:46). Where it
-deviates from RP2040 PIO (PUSH/PULL bit order, MOV src codes, WAIT field order) the SPEC wins.
+The table is SPEC.md §3 "Numeric selector codes (NORMATIVE)", v0.4 (Legion 17:33:11), which
+follows the RP2040 datasheet for WAIT, PUSH/PULL and MOV src. Where SPEC and RP2040 differ, SPEC wins.
 
 Run: python3 firmware/test_encoding.py   (exit 0 = all golden + error cases pass)
 """
@@ -54,20 +54,20 @@ GOLDEN = [
     # MOV dst: pins=000 x=001 y=010 null=011 exec=100 pc=101 isr=110 osr=111; op [4:3]
     ("mov x, y",           0b101_00000_001_00_010),
     ("mov y, !x",          0b101_00000_010_01_001),
-    ("mov osr, ::osr",     0b101_00000_111_10_110),
-    # MOV src: pins=0 x=1 y=2 null=3 status=4 isr=5 osr=6 exec=7 (SPEC §3 v0.3.1, not RP2040)
-    ("mov x, status",      0b101_00000_001_00_100),
-    ("mov x, isr",         0b101_00000_001_00_101),
-    ("mov pins, !osr",     0b101_00000_000_01_110),
-    # PUSH/PULL: A[2]=block A[1]=iffull/ifempty A[0]=push(1)/pull(0)
-    ("pull block",         0b100_00000_100_00000),
-    ("pull noblock",       0b100_00000_000_00000),
-    ("push block",         0b100_00000_101_00000),
-    ("push noblock",       0b100_00000_001_00000),
-    # WAIT: A[2:1]=src gpio=0 pin=1 irq=2, A[0]=polarity, B=idx
-    ("wait gpio, 1, 3",    0b001_00000_001_00011),
-    ("wait pin, 0, 2",     0b001_00000_010_00010),
-    ("wait irq, 1, 7",     0b001_00000_101_00111),
+    ("mov osr, ::osr",     0b101_00000_111_10_111),
+    # MOV src: pins=0 x=1 y=2 null=3 (4 reserved) status=5 isr=6 osr=7 (SPEC §3 v0.4 = RP2040)
+    ("mov x, status",      0b101_00000_001_00_101),
+    ("mov x, isr",         0b101_00000_001_00_110),
+    ("mov pins, !osr",     0b101_00000_000_01_111),
+    # PUSH/PULL: [7]=0 push/1 pull, [6]=iffull/ifempty, [5]=block
+    ("pull block",         0b100_00000_101_00000),
+    ("pull noblock",       0b100_00000_100_00000),
+    ("push block",         0b100_00000_001_00000),
+    ("push noblock",       0b100_00000_000_00000),
+    # WAIT: [7]=polarity, [6:5]=src gpio=0 pin=1 irq=2, [4:0]=idx
+    ("wait gpio, 1, 3",    0b001_00000_100_00011),
+    ("wait pin, 0, 2",     0b001_00000_001_00010),
+    ("wait irq, 1, 7",     0b001_00000_110_00111),
     # IRQ: A[2]=wait A[1]=clear(1)/set(0) A[0]=rel(1)/abs(0), B=idx 0..7
     ("irq set, abs, 3",    0b110_00000_000_00011),
     ("irq clear, abs, 3",  0b110_00000_010_00011),
@@ -87,6 +87,7 @@ MUST_REJECT = [
     "in foo, 1",
     "jmp sometimes, 0",    # unknown cond
     "mov foo, x",
+    "mov x, exec",          # MOV src 4 is reserved and there is no exec source (v0.4)
     "frob x, 1",           # unknown opcode
     "set 3, 1",            # SET dst 3 is reserved; only names are accepted
     "irq set, abs, 8",     # IRQ index is 0..7 (SPEC §3)
