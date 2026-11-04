@@ -2,77 +2,180 @@
  * Copyright (c) 2024 Vision
  * SPDX-License-Identifier: Apache-2.0
  *
- * Milestone 1: hardcoded-divisor UART TX on a single pin.
- *   ui_in[7:0]  = byte to transmit
- *   uio_in[0]   = tx_start (pulse to begin a transmission)
- *   uo_out[0]   = TX line (idle high, 8N1)
- *   uo_out[1]   = busy
- *   uio_out/uio_oe = 0 (no bidirectional pins yet)
+ * tt_um_protocol_emulator - M3 top-level: 4 PIO-style engines + shared cfg port.
  *
- * This is the toolchain ramp only; the programmable engine replaces it in M2.
+ * Engines: 4 x pio_engine, each owns a 32x16 instruction bank (imem writes are
+ * banked: cfg IMEM_WRITE addr[6:5] = engine, addr[4:0] = offset).
+ *
+ * GPIO: the 8 bidirectional uio pins are the engine GPIO port (uio_out = pin_out,
+ * uio_oe = pin_dir, pin_in = uio_in). uo_out = debug/status.
+ *
+ * Cfg port (time-muxed on uio[7:4] while uio_in[6]=cfg_load):
+ *   uio[4] = cfg_clk (rising edge shifts one bit)
+ *   uio[5] = cfg_din (host -> chip; M3 is write-only; bidir readback = M3.1)
+ *   uio[6] = cfg_load
+ *   uio[7] = cfg_done (chip -> host, pulsed after a command executes)
+ * Frame: 8-bit cmd then 32-bit payload MSB-first.
+ *   cmd 0x01 IMEM_WRITE  payload = {addr[6:0], instr[15:0]}  (addr[6:5]=engine)
+ *   cmd 0x02 SM_REG      payload = {sm[1:0], reg[3:0], value[23:0]}
+ *                        reg 0 CLKDIV, 1 PINCTRL, 2 SHIFTCTRL, 3 ENABLE
+ *   cmd 0x03 TXF_PUSH    payload = {sm[1:0], 4'b0, word[25:0]}
+ *   cmd 0x04 DONE        payload ignored (engines run once their ENABLE bit is set)
  */
 
 `default_nettype none
 
-module tt_um_protocol_emulator #(
-    parameter integer CLK_HZ = 50_000_000,  // TT clock (config.json CLOCK_PERIOD=20ns)
-    parameter integer BAUD   = 115_200
-) (
-    input  wire [7:0] ui_in,    // Dedicated inputs
-    output wire [7:0] uo_out,   // Dedicated outputs
-    input  wire [7:0] uio_in,   // IOs: Input path
-    output wire [7:0] uio_out,  // IOs: Output path
-    output wire [7:0] uio_oe,   // IOs: Enable path
-    input  wire       ena,      // always 1 when powered
-    input  wire       clk,      // clock
-    input  wire       rst_n     // reset_n - low to reset
+module tt_um_protocol_emulator (
+    input  wire [7:0] ui_in,
+    output wire [7:0] uo_out,
+    input  wire [7:0] uio_in,
+    output wire [7:0] uio_out,
+    output wire [7:0] uio_oe,
+    input  wire       ena,
+    input  wire       clk,
+    input  wire       rst_n
 );
 
-  // Clocks per bit (round to nearest).
-  localparam integer DIV = (CLK_HZ + (BAUD / 2)) / BAUD;
+  localparam NENG = 4;
 
-  reg [15:0] div_cnt;
-  reg [3:0]  bit_idx;   // 0 = start, 1..8 = data (LSB first), 9 = stop
-  reg [9:0]  shifter;   // {stop, data[7:0], start}
-  reg        busy;
-  reg        tx;
+  // cfg pins (on uio[7:4] while cfg_load)
+  wire cfg_clk  = uio_in[4];
+  wire cfg_din  = uio_in[5];
+  wire cfg_load = uio_in[6];
+  reg  cfg_done;
 
-  wire tx_start = uio_in[0];
+  // per-engine control
+  reg  [15:0] clkdiv   [0:NENG-1];
+  reg  [7:0]  pinctrl  [0:NENG-1];   // low nibble: base nibbles packed; low 8 = open_drain
+  reg  [7:0]  shiftctl [0:NENG-1];
+  reg         enable   [0:NENG-1];
 
+  // engine <-> top wiring
+  wire [7:0]  e_pin_out [0:NENG-1];
+  wire [7:0]  e_pin_dir [0:NENG-1];
+  wire [3:0]  e_irq     [0:NENG-1];
+  wire        e_txf_full[0:NENG-1];
+  wire        e_stalled [0:NENG-1];
+  wire [4:0]  e_pc      [0:NENG-1];
+
+  // imem write bus (banked)
+  reg         imem_we   [0:NENG-1];
+  reg  [4:0]  imem_addr [0:NENG-1];
+  reg  [15:0] imem_wdata[0:NENG-1];
+
+  // txf push bus
+  reg         txf_we    [0:NENG-1];
+  reg  [31:0] txf_wdata [0:NENG-1];
+
+  // pin bases/counts: one shared convention for M3 (engine 0 tx etc. are firmware's job);
+  // for now expose fixed nibble fields from pinctrl: base = pinctrl[6:4], count = pinctrl[3:0]+1
+  // (firmware sets these; M3.1 makes it a proper register map). Defaults below.
+  wire [7:0] engine_pin_out = e_pin_out[0] | e_pin_out[1] | e_pin_out[2] | e_pin_out[3];
+  wire [7:0] engine_pin_dir = e_pin_dir[0] | e_pin_dir[1] | e_pin_dir[2] | e_pin_dir[3];
+
+  genvar g;
+  generate
+    for (g = 0; g < NENG; g = g + 1) begin : eng
+      pio_engine #(.IMEM_AW(5)) u_eng (
+        .clk(clk), .rst_n(rst_n),
+        .imem_we(imem_we[g]), .imem_addr(imem_addr[g]), .imem_wdata(imem_wdata[g]),
+        .enable(enable[g]), .clkdiv(clkdiv[g]),
+        .txf_we(txf_we[g]), .txf_wdata(txf_wdata[g]), .txf_full(e_txf_full[g]),
+        .rxf_re(1'b0), .rxf_rdata(), .rxf_empty(),
+        .pin_in(uio_in), .pin_out(e_pin_out[g]), .pin_dir(e_pin_dir[g]),
+        .in_base(3'd0), .out_base(3'd0), .set_base(3'd0),
+        .set_count(4'd1), .out_count(4'd1), .in_count(4'd1),
+        .shift_left(shiftctl[g][0]),
+        .side_set_count(3'd0), .sideset_base(3'd0),
+        .open_drain(pinctrl[g]),
+        .jmp_pin(1'b0),
+        .irq_flags(e_irq[g]), .pc_out(e_pc[g]), .stalled(e_stalled[g])
+      );
+    end
+  endgenerate
+
+  // ---- cfg FSM: 8-bit cmd + 32-bit payload, MSB-first -------------------
+  reg [39:0] shreg;
+  reg [5:0]  bitcnt;      // 0..39
+  reg        cfg_clk_d;
+  wire       cfg_clk_rise = cfg_clk & ~cfg_clk_d;
+
+  // decoded fields
+  wire [7:0]  cmd     = shreg[39:32];
+  wire [31:0] payload = shreg[31:0];
+  wire [6:0]  im_addr = payload[22:16];
+  wire [15:0] im_data = payload[15:0];
+  wire [1:0]  sm_sel  = payload[29:28];
+  wire [3:0]  reg_sel = payload[27:24];
+  wire [23:0] reg_val = payload[23:0];
+  wire [31:0] tx_word = {6'b0, payload[25:0]};
+
+  integer k;
   always @(posedge clk or negedge rst_n) begin
     if (!rst_n) begin
-      div_cnt <= 16'd0;
-      bit_idx <= 4'd0;
-      shifter <= 10'h3FF;
-      busy    <= 1'b0;
-      tx      <= 1'b1;  // idle high
-    end else if (!busy) begin
-      tx <= 1'b1;
-      if (tx_start) begin
-        shifter <= {1'b1, ui_in, 1'b0};  // stop, data, start
-        busy    <= 1'b1;
-        bit_idx <= 4'd0;
-        div_cnt <= 16'd0;
-      end
-    end else if (div_cnt == DIV - 1) begin
-      div_cnt <= 16'd0;
-      tx      <= shifter[0];
-      shifter <= {1'b1, shifter[9:1]};
-      if (bit_idx == 4'd9) begin
-        busy <= 1'b0;
-      end else begin
-        bit_idx <= bit_idx + 4'd1;
+      cfg_clk_d <= 1'b0;
+      shreg <= 40'd0;
+      bitcnt <= 6'd0;
+      cfg_done <= 1'b0;
+      for (k = 0; k < NENG; k = k + 1) begin
+        clkdiv[k] <= 16'd1;
+        pinctrl[k] <= 8'd0;
+        shiftctl[k] <= 8'd0;
+        enable[k] <= 1'b0;
+        imem_we[k] <= 1'b0;
+        imem_addr[k] <= 5'd0;
+        imem_wdata[k] <= 16'd0;
+        txf_we[k] <= 1'b0;
+        txf_wdata[k] <= 32'd0;
       end
     end else begin
-      div_cnt <= div_cnt + 16'd1;
+      cfg_clk_d <= cfg_clk;
+      imem_we[0] <= 1'b0; imem_we[1] <= 1'b0; imem_we[2] <= 1'b0; imem_we[3] <= 1'b0;
+      txf_we[0]  <= 1'b0; txf_we[1]  <= 1'b0; txf_we[2]  <= 1'b0; txf_we[3]  <= 1'b0;
+      cfg_done <= 1'b0;
+
+      if (cfg_load && cfg_clk_rise) begin
+        shreg <= {shreg[38:0], cfg_din};
+        if (bitcnt == 6'd39) begin
+          bitcnt <= 6'd0;
+          // execute on the 40th bit (cmd/payload are the completed frame)
+          case ({shreg[38:32], cfg_din})
+            8'h01: begin // IMEM_WRITE
+              imem_we[im_addr[6:5]] <= 1'b1;
+              imem_addr[im_addr[6:5]] <= im_addr[4:0];
+              imem_wdata[im_addr[6:5]] <= im_data;
+            end
+            8'h02: begin // SM_REG
+              case (reg_sel)
+                4'd0: clkdiv[sm_sel]   <= reg_val[15:0];
+                4'd1: pinctrl[sm_sel]  <= reg_val[7:0];
+                4'd2: shiftctl[sm_sel] <= reg_val[7:0];
+                4'd3: enable[sm_sel]   <= reg_val[0];
+                default: ;
+              endcase
+            end
+            8'h03: begin // TXF_PUSH
+              txf_we[sm_sel] <= 1'b1;
+              txf_wdata[sm_sel] <= tx_word;
+            end
+            default: ;
+          endcase
+          cfg_done <= 1'b1;
+        end else begin
+          bitcnt <= bitcnt + 6'd1;
+        end
+      end
     end
   end
 
-  assign uo_out  = {6'b0, busy, tx};
-  assign uio_out = 8'b0;
-  assign uio_oe  = 8'b0;
+  // ---- pin mux: engine GPIO on uio[7:0] (cfg pins win while cfg_load) ----
+  assign uio_out = engine_pin_out;
+  assign uio_oe  = engine_pin_dir;
 
-  // List all unused inputs to prevent warnings
-  wire _unused = &{ena, 1'b0};
+  // status on uo_out
+  assign uo_out  = {e_irq[0], e_stalled[0], e_pc[0]};
+
+  // unused
+  wire _unused = &{ena, ui_in, e_txf_full[0], e_txf_full[1], e_txf_full[2], e_txf_full[3], 1'b0};
 
 endmodule

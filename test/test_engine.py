@@ -8,8 +8,8 @@ from cocotb.triggers import RisingEdge, ClockCycles
 
 # op | [12:8] delay/side | [7:5] A | [4:0] B
 PROG = [
-    0x8080,  # 0  pull block            (op=4, A=100)
-    0xE061,  # 1  set pindirs, 1        (op=7, A=011 pindirs, B=1)
+    0x80A0,  # 0  pull block            (op=4, [7]=pull, [5]=block per v0.4)
+    0xE081,  # 1  set pindirs, 1        (op=7, A=100 pindirs per SPEC v0.4, B=1)
     0xE001,  # 2  set pins, 1  (idle)
     0xE000,  # 3  set pins, 0  (start)
     0x6001,  # 4  out pins, 1  (bit0)

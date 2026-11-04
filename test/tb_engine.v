@@ -13,7 +13,7 @@ module tb_engine ();
   wire [3:0] irq_flags;
   wire [5:0] pc_out;
 
-  pio_engine #(.IMEM_AW(6)) dut (
+  pio_engine #(.IMEM_AW(5)) dut (
     .clk(clk), .rst_n(rst_n), .imem_we(imem_we), .imem_addr(imem_addr), .imem_wdata(imem_wdata),
     .enable(enable), .clkdiv(clkdiv),
     .txf_we(txf_we), .txf_wdata(txf_wdata), .txf_full(txf_full),

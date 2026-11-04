@@ -18,7 +18,8 @@
 `default_nettype none
 
 module pio_engine #(
-    parameter integer IMEM_AW = 5   // SPEC v0.4: 32-instruction bank per engine; JMP addr [4:0]
+    parameter integer IMEM_AW = 5,  // SPEC v0.4: 32-instruction bank per engine; JMP addr [4:0]
+    parameter integer XY_W    = 32  // X/Y width; SPEC allows 16 under area pressure
 ) (
     input  wire        clk,
     input  wire        rst_n,
@@ -78,7 +79,9 @@ module pio_engine #(
              OP_PUSH = 3'd4, OP_MOV = 3'd5, OP_IRQ = 3'd6, OP_SET = 3'd7;
 
   reg [31:0] osr, isr;
-  reg [31:0] x, y;   // SPEC v0.4: X/Y are 32-bit
+  reg [XY_W-1:0] x, y;   // SPEC v0.4: 32-bit default; 16 allowed under area pressure
+  wire [31:0] x32 = {{(32-XY_W){1'b0}}, x};
+  wire [31:0] y32 = {{(32-XY_W){1'b0}}, y};
   reg [7:0]  pins, pindirs;
   reg [3:0]  irq;
 
@@ -129,8 +132,8 @@ module pio_engine #(
 
   // MOV source + op (SPEC v0.4): src 0 pins,1 x,2 y,3 null,4 rsvd,5 status,6 isr,7 osr
   wire [31:0] mov_src = (opB[2:0] == 3'd0) ? {24'b0, pin_s} :
-                        (opB[2:0] == 3'd1) ? x :
-                        (opB[2:0] == 3'd2) ? y :
+                        (opB[2:0] == 3'd1) ? x32 :
+                        (opB[2:0] == 3'd2) ? y32 :
                         (opB[2:0] == 3'd5) ? 32'd0 :
                         (opB[2:0] == 3'd6) ? isr :
                         (opB[2:0] == 3'd7) ? osr : 32'd0;
