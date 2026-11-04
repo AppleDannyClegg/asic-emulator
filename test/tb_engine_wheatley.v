@@ -44,6 +44,6 @@ module tb_engine_wheatley;
     if (n !== 6) begin $display("FAIL delay count=%0d (exp 6)", n); fails=fails+1; end else $display("PASS delay=4 (6 ticks)");
 
     if (fails==0) $display("ALL PASS"); else $display("FAILURES=%0d", fails);
-    $finish;
+    $finish(fails==0 ? 0 : 1);
   end
 endmodule

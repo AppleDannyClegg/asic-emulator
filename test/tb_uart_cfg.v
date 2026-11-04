@@ -54,7 +54,7 @@ module tb_uart_cfg;
       match=-1; $display("FAIL: TX frame matched but pin_dir[0]=%b (pin not driven)", dut.e_pin_dir[0][0]);
     end
     if (match>=0) $display("PASS cfg-loop: engine0 TX frame for 0x41 matches uart_ref at sample %0d", match);
-    else          $display("FAIL cfg-loop: pin_dir0[0]=%b enable0=%b", dut.e_pin_dir[0][0], dut.enable[0]);
+    else          begin $display("FAIL cfg-loop: pin_dir0[0]=%b enable0=%b", dut.e_pin_dir[0][0], dut.enable[0]); $finish(1); end
 
     // ---- phase 2: FSTAT overrun status THROUGH THE TOP (Gort 19:59:30 / Vision 19:58:50) ----
     // Reload engine0 with 5x 'push noblock' (0x8000) + halt; 5 pushes fill the 4-deep RXF -> overrun.
@@ -65,7 +65,7 @@ module tb_uart_cfg;
     uio_in[6]=1'b0; repeat(20) @(negedge clk);
     if (uo_out[3] !== 1'b1) begin
       $display("FAIL fstat: 5x push noblock -> uo_out[3]=%b (expected 1), any_overrun=%b", uo_out[3], dut.any_overrun);
-      $finish;
+      $finish(1);
     end
     $display("PASS fstat: RXF overrun drives uo_out[3]=1 through the top (any_overrun=%b)", dut.any_overrun);
     $finish;
