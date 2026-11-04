@@ -15,7 +15,7 @@ module tb_engine_wheatley;
   reg [2:0] in_base=3'd1, out_base=3'd0, set_base=3'd2;
   reg [3:0] set_count=4'd2, out_count=4'd1, in_count=4'd1;
   reg shift_left=0; reg [2:0] side_set_count=3'd0, sideset_base=3'd0;
-  wire [3:0] irq_flags; wire [4:0] pc_out; wire stalled;
+  wire [7:0] irq_flags; wire [4:0] pc_out; wire stalled;
   pio_engine #(.IMEM_AW(5)) dut(.clk(clk),.rst_n(rst_n),.imem_we(imem_we),.imem_addr(imem_addr),
     .imem_wdata(imem_wdata),.enable(enable),.clkdiv(clkdiv),.txf_we(txf_we),.txf_wdata(txf_wdata),
     .txf_full(txf_full),.rxf_re(rxf_re),.rxf_rdata(rxf_rdata),.rxf_empty(rxf_empty),.pin_in(pin_in),
@@ -43,7 +43,7 @@ module tb_engine_wheatley;
     n=0; while (pin_out==0 && n<40) begin @(negedge clk); n=n+1; end
     if (n !== 6) begin $display("FAIL delay count=%0d (exp 6)", n); fails=fails+1; end else $display("PASS delay=4 (6 ticks)");
 
-    if (fails==0) $display("ALL PASS"); else $display("FAILURES=%0d", fails);
-    $finish(fails==0 ? 0 : 1);
+    if (fails==0) $display("ALL PASS"); else $fatal(1, "FAILURES=%0d", fails);
+    $finish;
   end
 endmodule
