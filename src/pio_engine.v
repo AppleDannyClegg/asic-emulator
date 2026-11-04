@@ -4,32 +4,35 @@
  *
  * pio_engine - one RP2040-PIO-style state machine (ISA freeze v0.1, Legion 17:20:37).
  *
- * 16-bit instruction: [15:13] op | [12:8] delay/sideset(5) | [7:5] operand-A(3) | [4:0] operand-B(5)
- * One instruction per (clkdiv) engine cycle. This first cut implements the ops needed
- * for the UART TX program: PULL, SET (pins/x/y/pindirs), OUT pins/x, JMP (always / !X / X-- / !Y / Y--),
- * MOV, IN, PUSH. WAIT/IRQ/side-set/autopull are stubbed for M2.1.
+ * 16-bit instruction: [15:13] op | [12:8] delay/side-set(5) | [7:5] operand-A(3) | [4:0] operand-B(5)
+ * One instruction per (clkdiv) engine cycle.
  *
- * Pin model: a single 8-bit GPIO port; per-pin direction mask (pindirs), output value (pins).
+ * This first cut (M2.0) implements the ops the UART TX program needs:
+ *   PULL, SET (pins / pindirs / x / y), OUT pins, JMP (always / !X / X-- / !Y / Y--), MOV, IN, PUSH.
+ * WAIT / IRQ / side-set / autopull are M2.1.
+ *
+ * Pin model: one 8-bit GPIO port; `pindirs` is the per-pin direction mask, `pins` the driven value.
+ * SET/OUT/IN use base+count windows from PINCTRL.
  */
 
 `default_nettype none
 
 module pio_engine #(
-    parameter integer IMEM_AW = 6  // 64 x 16-bit
+    parameter integer IMEM_AW = 6
 ) (
     input  wire        clk,
     input  wire        rst_n,
 
-    // Instruction memory write port (from the sequencer/config port)
+    // Instruction memory write port
     input  wire        imem_we,
     input  wire [IMEM_AW-1:0] imem_addr,
     input  wire [15:0] imem_wdata,
 
-    // Control
+    // Control / timing
     input  wire        enable,
-    input  wire [15:0] clkdiv,        // engine cycle = (clkdiv) system clocks (1 = every clock)
+    input  wire [15:0] clkdiv,       // engine cycle = clkdiv system clocks (1 = every clock)
 
-    // TX FIFO write port (host -> engine), RX FIFO read port (engine -> host)
+    // TX FIFO (host -> engine), RX FIFO (engine -> host), 4-deep x 32-bit
     input  wire        txf_we,
     input  wire [31:0] txf_wdata,
     output wire        txf_full,
@@ -38,153 +41,141 @@ module pio_engine #(
     output wire        rxf_empty,
 
     // GPIO
-    input  wire [7:0]  pin_in,        // sampled input pins
-    output wire [7:0]  pin_out,       // driven output values
-    output wire [7:0]  pin_dir,       // 1 = output
+    input  wire [7:0]  pin_in,
+    output wire [7:0]  pin_out,
+    output wire [7:0]  pin_dir,
     input  wire [2:0]  in_base,
     input  wire [2:0]  out_base,
     input  wire [2:0]  set_base,
-    input  wire [4:0]  out_count,     // number of OUT pins (<=8)
+    input  wire [3:0]  set_count,
+    input  wire [3:0]  out_count,
+    input  wire [3:0]  in_count,
 
-    output wire [3:0]  irq_flags,     // sticky IRQ flags (bit0 = tx stall, etc.)
-
+    output wire [3:0]  irq_flags,
     output wire [IMEM_AW-1:0] pc_out,
     output wire        stalled
 );
 
-  // ---- instruction memory -------------------------------------------------
   reg [15:0] imem [0:(1<<IMEM_AW)-1];
   always @(posedge clk) if (imem_we) imem[imem_addr] <= imem_wdata;
 
-  // ---- program counter ----------------------------------------------------
   reg [IMEM_AW-1:0] pc;
   wire [15:0] instr = imem[pc];
   wire [2:0]  op    = instr[15:13];
-  wire [4:0]  delay = instr[12:8];
   wire [2:0]  opA   = instr[7:5];
   wire [4:0]  opB   = instr[4:0];
 
   localparam OP_JMP = 3'd0, OP_WAIT = 3'd1, OP_IN = 3'd2, OP_OUT = 3'd3,
              OP_PUSH = 3'd4, OP_MOV = 3'd5, OP_IRQ = 3'd6, OP_SET = 3'd7;
 
-  // ---- state --------------------------------------------------------------
   reg [31:0] osr, isr;
-  reg [4:0]  osr_cnt, isr_cnt;
   reg [7:0]  x, y;
   reg [7:0]  pins, pindirs;
   reg [3:0]  irq;
 
-  // ---- engine clock divider ----------------------------------------------
+  // engine clock divider
   reg [15:0] div_cnt;
   wire tick = enable && (clkdiv <= 16'd1 || div_cnt == clkdiv - 16'd1);
   always @(posedge clk or negedge rst_n) begin
-    if (!rst_n) div_cnt <= 16'd0;
-    else if (!enable) div_cnt <= 16'd0;
-    else if (tick) div_cnt <= 16'd0;
-    else div_cnt <= div_cnt + 16'd1;
+    if (!rst_n)              div_cnt <= 16'd0;
+    else if (!enable)        div_cnt <= 16'd0;
+    else if (tick)           div_cnt <= 16'd0;
+    else                     div_cnt <= div_cnt + 16'd1;
   end
 
-  // ---- FIFOs (4-deep, 32-bit) --------------------------------------------
+  // FIFOs
   reg [31:0] txf [0:3]; reg [2:0] txf_cnt;
   reg [31:0] rxf [0:3]; reg [2:0] rxf_cnt;
   assign txf_full  = (txf_cnt == 3'd4);
   assign rxf_empty = (rxf_cnt == 3'd0);
   assign rxf_rdata = rxf[0];
 
-  wire pull_req = (op == OP_PUSH) && opA[7-5+2] == 1'b1;  // [7] set => PULL (PIO convention)
+  // PUSH/PULL: PIO uses opA[7]=0 push / 1 pull (opA is 3 bits here, so use opB[7]? keep PIO's
+  // encoding: the PUSH/PULL instruction's bit 7 distinguishes pull; we carry it in opA[2]).
+  wire is_pull = opA[2];
+  wire is_block = 1'b1;  // M2.0: always blocking
 
-  // ---- helper: shift in/out ----------------------------------------------
-  wire [4:0] n = (opB == 5'd0) ? 5'd32 : opB;  // 0 means 32
+  // shift helpers
+  wire [5:0] out_n = (out_count == 0) ? 6'd1 : {2'b0, out_count};
+  wire [5:0] in_n  = (in_count  == 0) ? 6'd1 : {2'b0, in_count};
 
-  function [31:0] ror32(input [31:0] v, input integer k);  // right shift by k (1..32)
-    begin
-      ror32 = (k >= 32) ? v : (v >> k);
-    end
-  endfunction
-
-  // ---- sequential execute -------------------------------------------------
   integer i;
   always @(posedge clk or negedge rst_n) begin
     if (!rst_n) begin
-      pc <= 0; osr <= 0; isr <= 0; osr_cnt <= 0; isr_cnt <= 0;
-      x <= 0; y <= 0; pins <= 0; pindirs <= 0; irq <= 0;
+      pc <= 0; osr <= 0; isr <= 0; x <= 0; y <= 0; pins <= 0; pindirs <= 0; irq <= 0;
       txf_cnt <= 0; rxf_cnt <= 0;
     end else if (enable && tick) begin
-      // defaults
       pc <= pc + 1'b1;
       case (op)
         OP_SET: begin
           case (opA)
-            3'd0: begin // SET pins, imm
+            3'd0: begin // SET pins, imm  -> drive opB[set_count-1:0] onto set_base..set_base+set_count-1
               for (i = 0; i < 8; i = i + 1)
-                if (i >= set_base && (i - set_base) < opB)
-                  pins[i] <= 1'b0; // placeholder; handled below by masked set
+                if (i >= set_base && (i - set_base) < set_count)
+                  pins[i] <= opB[i - set_base];
             end
             3'd1: x <= opB;
             3'd2: y <= opB;
             3'd3: pindirs <= opB;
             default: ;
           endcase
-          if (opA == 3'd0) begin
-            for (i = 0; i < 8; i = i + 1)
-              if (i >= set_base && (i - set_base) < opB)
-                pins[i] <= 1'b1;
-          end
         end
         OP_MOV: begin
-          // opA = dest, opB[2:0] = src; opB[3] = invert, opB[4] = reverse
+          // opA = dest (1=x, 2=y), opB[2:0] = src (1=x, 2=y), opB[3] = invert
           case (opA)
-            3'd1: x <= opB[3] ? ~y : y;   // MOV x, y (src 2)
-            3'd2: y <= opB[3] ? ~x : x;   // MOV y, x (src 1)
+            3'd1: x <= opB[3] ? ~((opB[2:0] == 3'd2) ? y : x) : ((opB[2:0] == 3'd2) ? y : x);
+            3'd2: y <= opB[3] ? ~((opB[2:0] == 3'd1) ? x : y) : ((opB[2:0] == 3'd1) ? x : y);
             default: ;
           endcase
         end
         OP_OUT: begin
-          // OUT pins,n  (opA=0); shift osr right, drive out_base..out_base+out_count
+          // OUT pins, n -> drive osr[out_count-1:0] onto out pins, then osr >>= out_count
           case (opA)
             3'd0: begin
               for (i = 0; i < 8; i = i + 1)
                 if (i >= out_base && (i - out_base) < out_count)
                   pins[i] <= osr[i - out_base];
-              osr <= ror32(osr, (out_count == 0) ? 32 : out_count);
-              osr_cnt <= osr_cnt + out_count;
+              osr <= (out_n >= 32) ? 32'b0 : (osr >> out_n);
+            end
+            3'd4: begin // OUT pindirs, n
+              for (i = 0; i < 8; i = i + 1)
+                if (i >= out_base && (i - out_base) < out_count)
+                  pindirs[i] <= osr[i - out_base];
+              osr <= (out_n >= 32) ? 32'b0 : (osr >> out_n);
             end
             default: ;
           endcase
         end
         OP_IN: begin
-          // IN pins,n -> shift pin_in[in_base +: n] into ISR (right)
-          isr <= (isr >> n) | ({{(32-8){1'b0}}, pin_in} << (32 - n));
-          isr_cnt <= isr_cnt + n;
+          // IN pins, n -> isr = (isr >> in_count) | (pin_window << (32-in_count))
+          isr <= (isr >> in_n) | ({{(32-8){1'b0}}, pin_in} << (32 - in_n));
         end
         OP_PUSH: begin
-          if (opA[7-5+2]) begin // PULL
+          if (is_pull) begin
             if (txf_cnt != 0) begin
               osr <= txf[0];
               for (i = 0; i < 3; i = i + 1) txf[i] <= txf[i+1];
               txf_cnt <= txf_cnt - 1'b1;
-              osr_cnt <= 0;
             end else begin
-              irq[0] <= 1'b1;  // stall flag (blocking pull with empty FIFO)
-              pc <= pc;        // stall on this instruction
+              irq[0] <= 1'b1;   // stall (blocking pull, empty FIFO)
+              pc <= pc;
             end
-          end else begin        // PUSH isr -> RX FIFO
+          end else begin
             if (rxf_cnt != 4) begin
               rxf[rxf_cnt] <= isr;
               rxf_cnt <= rxf_cnt + 1'b1;
-              isr_cnt <= 0;
             end else begin
-              irq[0] <= 1'b1;  // overrun
+              irq[0] <= 1'b1;   // overrun
             end
           end
         end
         OP_JMP: begin
           case (opA)
-            3'd0: pc <= opB[IMEM_AW-1:0];                 // always
-            3'd1: if (x == 0) pc <= opB[IMEM_AW-1:0];     // !X
-            3'd2: begin if (x != 0) pc <= opB[IMEM_AW-1:0]; x <= x - 1'b1; end // X--
-            3'd3: if (y == 0) pc <= opB[IMEM_AW-1:0];     // !Y
-            3'd4: begin if (y != 0) pc <= opB[IMEM_AW-1:0]; y <= y - 1'b1; end // Y--
+            3'd0: pc <= opB[IMEM_AW-1:0];
+            3'd1: if (x == 0) pc <= opB[IMEM_AW-1:0];
+            3'd2: begin if (x != 0) pc <= opB[IMEM_AW-1:0]; x <= x - 1'b1; end
+            3'd3: if (y == 0) pc <= opB[IMEM_AW-1:0];
+            3'd4: begin if (y != 0) pc <= opB[IMEM_AW-1:0]; y <= y - 1'b1; end
             default: ;
           endcase
         end
@@ -195,17 +186,17 @@ module pio_engine #(
 
   // TX FIFO host write
   always @(posedge clk or negedge rst_n) begin
-    if (!rst_n) ; // txf_cnt handled above
+    if (!rst_n) ;
     else if (txf_we && txf_cnt != 4) begin
       txf[txf_cnt] <= txf_wdata;
       txf_cnt <= txf_cnt + 1'b1;
     end
   end
 
-  assign pin_out  = pins;
-  assign pin_dir  = pindirs;
+  assign pin_out   = pins;
+  assign pin_dir   = pindirs;
   assign irq_flags = irq;
-  assign pc_out   = pc;
-  assign stalled  = enable && (op == OP_PUSH) && opA[7-5+2] && (txf_cnt == 0);
+  assign pc_out    = pc;
+  assign stalled   = enable && (op == OP_PUSH) && is_pull && (txf_cnt == 0);
 
 endmodule
