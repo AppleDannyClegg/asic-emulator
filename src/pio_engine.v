@@ -19,7 +19,8 @@
 
 module pio_engine #(
     parameter integer IMEM_AW = 5,  // SPEC v0.4: 32-instruction bank per engine; JMP addr [4:0]
-    parameter integer XY_W    = 32  // X/Y width; SPEC allows 16 under area pressure
+    parameter integer XY_W    = 32, // X/Y width; SPEC allows 16 under area pressure
+    parameter integer FIFO_DEPTH = 4 // TX/RX FIFO depth (SPEC 4; 2 halves the flops)
 ) (
     input  wire        clk,
     input  wire        rst_n,
@@ -95,11 +96,12 @@ module pio_engine #(
     else                     div_cnt <= div_cnt + 16'd1;
   end
 
-  // FIFOs
-  reg [31:0] txf [0:3]; reg [2:0] txf_cnt;
-  reg [31:0] rxf [0:3]; reg [2:0] rxf_cnt;
-  assign txf_full  = (txf_cnt == 3'd4);
-  assign rxf_empty = (rxf_cnt == 3'd0);
+  // FIFOs (depth parameterised; SPEC default 4)
+  localparam integer FCW = $clog2(FIFO_DEPTH+1);
+  reg [31:0] txf [0:FIFO_DEPTH-1]; reg [FCW-1:0] txf_cnt;
+  reg [31:0] rxf [0:FIFO_DEPTH-1]; reg [FCW-1:0] rxf_cnt;
+  assign txf_full  = (txf_cnt == FIFO_DEPTH[FCW-1:0]);
+  assign rxf_empty = (rxf_cnt == {FCW{1'b0}});
   assign rxf_rdata = rxf[0];
 
   // 2-FF synchroniser for the async GPIO inputs (metastability). `pin_s` is the usable
@@ -170,7 +172,7 @@ module pio_engine #(
       txf_cnt <= 0; rxf_cnt <= 0; delay_cnt <= 5'd0;
     end else begin
       // host TXF push (every clock), SINGLE writer; skipped when the engine pulls this cycle
-      if (txf_we && txf_cnt != 4 && !(enable && tick && op == OP_PUSH && is_pull && txf_cnt != 0)) begin
+      if (txf_we && txf_cnt != FIFO_DEPTH[FCW-1:0] && !(enable && tick && op == OP_PUSH && is_pull && txf_cnt != 0)) begin
         txf[txf_cnt] <= txf_wdata;
         txf_cnt <= txf_cnt + 1'b1;
       end
@@ -240,7 +242,7 @@ module pio_engine #(
           if (is_pull) begin
             if (txf_cnt != 0) begin
               osr <= txf[0];
-              for (i = 0; i < 3; i = i + 1) txf[i] <= txf[i+1];
+              for (i = 0; i < FIFO_DEPTH-1; i = i + 1) txf[i] <= txf[i+1];
               txf_cnt <= txf_cnt - 1'b1;
             end else if (is_block) begin
               irq[0] <= 1'b1;   // block: stall (empty FIFO)
@@ -249,7 +251,7 @@ module pio_engine #(
               irq[0] <= 1'b1;   // noblock: proceed with the stale OSR
             end
           end else begin
-            if (rxf_cnt != 4) begin
+            if (rxf_cnt != FIFO_DEPTH[FCW-1:0]) begin
               rxf[rxf_cnt] <= isr;
               rxf_cnt <= rxf_cnt + 1'b1;
             end else begin
