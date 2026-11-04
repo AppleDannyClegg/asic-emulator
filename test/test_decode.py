@@ -246,10 +246,10 @@ async def rx_overrun_does_not_raise_user_irq0(dut):
     await run(dut, "push noblock\npush noblock\npush noblock\npush noblock\npush noblock", cycles=10)
     assert int(dut.rxf_empty.value) == 0, "pushes did not reach the RX FIFO"
     assert irqs(dut) == 0, f"irq_flags={irqs(dut):#04x}: RX overrun set a user IRQ"
-    assert reg(dut, "fstat_overrun") == 1, "5th push into a 4-deep RX FIFO did not set sticky fstat_overrun"
+    assert reg(dut, "rx_overrun") == 1, "5th push into a 4-deep RX FIFO did not set sticky rx_overrun"
 
 
 @engine_test
 async def rx_no_overrun_when_not_full(dut):
     await run(dut, "push noblock\npush noblock\npush noblock\npush noblock", cycles=10)
-    assert reg(dut, "fstat_overrun") == 0, "fstat_overrun set by 4 pushes into a 4-deep RX FIFO"
+    assert reg(dut, "rx_overrun") == 0, "rx_overrun set by 4 pushes into a 4-deep RX FIFO"
