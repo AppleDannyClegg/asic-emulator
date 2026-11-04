@@ -134,7 +134,7 @@ One system clock `clk_hz` (Tiny Tapeout `clock_hz` in `info.yaml`). Each engine 
 - **Autopull/autopush**: thresholds in `SHIFTCTRL` so `OUT`/`IN` auto-refill/flush without explicit
   PUSH/PULL.
 - **Overrun policy (RX)**: default **non-blocking push-if-full = drop the byte + set a sticky
-  `OVERRUN` bit in the engine's FIFO-status register `FSTAT`** (status output `fstat_overrun`; cf. RP2040 `FDEBUG.RXOVER`) — **not** a
+  `RXOVER` field in the engine's FIFO-status register `FSTAT`** (RTL signal `rx_overrun`; cf. RP2040 `FDEBUG.RXOVER`) — **not** a
   user IRQ. Sticky: cleared only by an explicit cfg `FSTAT_CLEAR`, never by `IRQ clear`. Also cfg-readable
   (M3.2). A blocking RX that deadlocks a protocol is worse than a dropped byte.
   **TX default blocking** (back-pressure). A stall is a *status* (`stalled`/`FSTAT`), never a user IRQ.
@@ -145,7 +145,7 @@ One system clock `clk_hz` (Tiny Tapeout `clock_hz` in `info.yaml`). Each engine 
 lets engines synchronise (cross-engine trigger, e.g. SPI-master + chip-select engine). Rel/abs
 addressing as in PIO.
 
-**User IRQs are NOT status signals.** FIFO empty/full/stall and RX `OVERRUN` live in the engine's
+**User IRQs are NOT status signals.** FIFO empty/full/stall and RX `RXOVER` live in the engine's
 `FSTAT` register (readable via cfg, M3.2) and must never alias a user IRQ flag. In particular a
 blocking/noblock stall or an RX overrun must **not** set any of IRQ 0..7 — otherwise firmware
 `wait irq,1,0` / `irq clear 0` would be woken or wiped by another engine's FIFO state.
