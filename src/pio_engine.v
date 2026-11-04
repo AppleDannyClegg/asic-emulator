@@ -62,7 +62,7 @@ module pio_engine #(
     input  wire [7:0]  open_drain,   // PINCTRL: driven-1 auto-releases this pin (I2C)
     input  wire        jmp_pin,      // EXECCTRL JMP_PIN: value for the JMP PIN condition
 
-    output wire [3:0]  irq_flags,
+    output wire [7:0]  irq_flags,   // SPEC §8: 8 shared IRQ flags (idx 0..7)
     output wire [IMEM_AW-1:0] pc_out,
     output wire        stalled
 );
@@ -84,7 +84,7 @@ module pio_engine #(
   wire [31:0] x32 = {{(32-XY_W){1'b0}}, x};
   wire [31:0] y32 = {{(32-XY_W){1'b0}}, y};
   reg [7:0]  pins, pindirs;
-  reg [3:0]  irq;
+  reg [7:0]  irq;   // SPEC §8: 8 flags so IRQ/WAIT idx 0..7 is in range (was 4 -> out-of-range X)
 
   // engine clock divider
   reg [15:0] div_cnt;
@@ -152,7 +152,7 @@ module pio_engine #(
   wire wait_pol = opA[2];
   wire [7:0] wait_val = (opA[1:0] == 2'd0) ? pin_s :
                         (opA[1:0] == 2'd1) ? (pin_s >> in_base) :
-                        {4'b0, irq};
+                        irq;
   wire wait_ok = (wait_val[opB[2:0]] == wait_pol);
 
   // JMP target: 5-bit within-bank address (opB[4:0]); zero-extended to the PC width.

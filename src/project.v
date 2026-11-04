@@ -63,7 +63,7 @@ module tt_um_protocol_emulator #(
   // engine <-> top wiring
   wire [7:0]  e_pin_out [0:NENG-1];
   wire [7:0]  e_pin_dir [0:NENG-1];
-  wire [3:0]  e_irq     [0:NENG-1];
+  wire [7:0]  e_irq     [0:NENG-1];
   wire        e_txf_full[0:NENG-1];
   wire        e_stalled [0:NENG-1];
   wire [4:0]  e_pc      [0:NENG-1];
@@ -217,7 +217,7 @@ module tt_um_protocol_emulator #(
   assign uio_oe  = {1'b1, engine_pin_dir[6:0]};
 
   // status on uo_out
-  assign uo_out  = {e_irq[0], e_stalled[0], e_pc[0]};
+  assign uo_out  = {e_irq[0][0], e_stalled[0], e_pc[0]};
 
   // unused
   wire _unused = &{ena, ui_in, e_txf_full[0], 1'b0};
