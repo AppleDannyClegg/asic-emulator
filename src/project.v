@@ -224,7 +224,7 @@ module tt_um_protocol_emulator #(
     any_overrun = 1'b0;
     for (oi = 0; oi < NENG; oi = oi + 1) any_overrun = any_overrun | e_overrun[oi];
   end
-  assign uo_out  = {4'b0, any_overrun, e_pc[0], e_stalled[0], e_irq[0][0]};
+  assign uo_out  = {4'b0, any_overrun, e_pc[0][0], e_stalled[0], e_irq[0][0]};
 
   // unused
   wire _unused = &{ena, ui_in, e_txf_full[0], 1'b0};
