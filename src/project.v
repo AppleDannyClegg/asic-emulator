@@ -46,7 +46,17 @@ module tt_um_protocol_emulator #(
 
   // per-engine control
   reg  [15:0] clkdiv   [0:NENG-1];
-  reg  [7:0]  pinctrl  [0:NENG-1];   // low nibble: base nibbles packed; low 8 = open_drain
+  // PINCTRL split (SPEC §9, Weyland 18:02:56): reg1 = PINCTRL-A (open_drain + bases),
+  // reg5 = PINCTRL-B (counts + side-set). Per engine.
+  reg  [7:0]  open_drain  [0:NENG-1];
+  reg  [2:0]  in_base     [0:NENG-1];
+  reg  [2:0]  out_base    [0:NENG-1];
+  reg  [2:0]  set_base    [0:NENG-1];
+  reg  [3:0]  in_count    [0:NENG-1];
+  reg  [3:0]  out_count   [0:NENG-1];
+  reg  [3:0]  set_count   [0:NENG-1];
+  reg  [2:0]  side_set_count [0:NENG-1];
+  reg  [2:0]  sideset_base  [0:NENG-1];
   reg  [7:0]  shiftctl [0:NENG-1];
   reg         enable   [0:NENG-1];
 
@@ -93,11 +103,11 @@ module tt_um_protocol_emulator #(
         .txf_we(txf_we[g]), .txf_wdata(txf_wdata[g]), .txf_full(e_txf_full[g]),
         .rxf_re(1'b0), .rxf_rdata(), .rxf_empty(),
         .pin_in(uio_in), .pin_out(e_pin_out[g]), .pin_dir(e_pin_dir[g]),
-        .in_base(3'd0), .out_base(3'd0), .set_base(3'd0),
-        .set_count(4'd1), .out_count(4'd1), .in_count(4'd1),
+        .in_base(in_base[g]), .out_base(out_base[g]), .set_base(set_base[g]),
+        .set_count(set_count[g]), .out_count(out_count[g]), .in_count(in_count[g]),
         .shift_left(shiftctl[g][0]),
-        .side_set_count(3'd0), .sideset_base(3'd0),
-        .open_drain(pinctrl[g]),
+        .side_set_count(side_set_count[g]), .sideset_base(sideset_base[g]),
+        .open_drain(open_drain[g]),
         .jmp_pin(1'b0),
         .irq_flags(e_irq[g]), .pc_out(e_pc[g]), .stalled(e_stalled[g])
       );
@@ -111,8 +121,10 @@ module tt_um_protocol_emulator #(
   wire       cfg_clk_rise = cfg_clk & ~cfg_clk_d;
 
   // decoded fields
-  wire [7:0]  cmd     = shreg[39:32];
-  wire [31:0] payload = shreg[31:0];
+  // On the 40th bit (bitcnt==39) shreg holds bits 0..38 (shreg[38]=bit0) and cfg_din is
+  // bit39, so the completed frame = {shreg[38:0], cfg_din}; cmd = bits 0..7, payload = 8..39.
+  wire [7:0]  cmd     = shreg[38:31];
+  wire [31:0] payload = {shreg[30:0], cfg_din};
   wire [6:0]  im_addr = payload[22:16];
   wire [15:0] im_data = payload[15:0];
   wire [1:0]  sm_sel  = payload[29:28];
@@ -129,7 +141,10 @@ module tt_um_protocol_emulator #(
       cfg_done <= 1'b0;
       for (k = 0; k < NENG; k = k + 1) begin
         clkdiv[k] <= 16'd1;
-        pinctrl[k] <= 8'd0;
+        open_drain[k] <= 8'd0;
+        in_base[k] <= 3'd0; out_base[k] <= 3'd0; set_base[k] <= 3'd0;
+        in_count[k] <= 4'd1; out_count[k] <= 4'd1; set_count[k] <= 4'd1;
+        side_set_count[k] <= 3'd0; sideset_base[k] <= 3'd0;
         shiftctl[k] <= 8'd0;
         enable[k] <= 1'b0;
         imem_we[k] <= 1'b0;
@@ -151,7 +166,7 @@ module tt_um_protocol_emulator #(
         if (bitcnt == 6'd39) begin
           bitcnt <= 6'd0;
           // execute on the 40th bit (cmd/payload are the completed frame)
-          case ({shreg[38:32], cfg_din})
+          case (cmd)
             8'h01: begin // IMEM_WRITE
               if (im_addr[6:5] < NENG) begin
                 imem_we[im_addr[6:5]] <= 1'b1;
@@ -162,9 +177,21 @@ module tt_um_protocol_emulator #(
             8'h02: begin // SM_REG
               case (reg_sel)
                 4'd0: clkdiv[sm_sel]   <= reg_val[15:0];
-                4'd1: pinctrl[sm_sel]  <= reg_val[7:0];
+                4'd1: begin // PINCTRL-A: open_drain[7:0] | in_base[10:8] | out_base[13:11] | set_base[16:14]
+                  open_drain[sm_sel] <= reg_val[7:0];
+                  in_base[sm_sel]    <= reg_val[10:8];
+                  out_base[sm_sel]   <= reg_val[13:11];
+                  set_base[sm_sel]   <= reg_val[16:14];
+                end
                 4'd2: shiftctl[sm_sel] <= reg_val[7:0];
                 4'd3: enable[sm_sel]   <= reg_val[0];
+                4'd5: begin // PINCTRL-B: in_count[3:0] | out_count[7:4] | set_count[11:8] | side_set_count[14:12] | sideset_base[17:15]
+                  in_count[sm_sel]       <= reg_val[3:0];
+                  out_count[sm_sel]      <= reg_val[7:4];
+                  set_count[sm_sel]      <= reg_val[11:8];
+                  side_set_count[sm_sel] <= reg_val[14:12];
+                  sideset_base[sm_sel]   <= reg_val[17:15];
+                end
                 default: ;
               endcase
             end
