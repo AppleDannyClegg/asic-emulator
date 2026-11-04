@@ -181,8 +181,16 @@ async def jmp_x_ne_y(dut):
     await _jmp_check(dut, "set x, 0\nset y, 0", "x!=y", False)
 
 
-# NOT COVERED: jmp pin (no JMP_PIN select port on pio_engine yet; EXECCTRL is M2.1) and
-# jmp !osre (SPEC does not define when OSR counts as empty - no shift counter in the RTL).
+@engine_test
+async def jmp_pin(dut):
+    # JMP cond 6 = PIN: taken iff the EXECCTRL JMP_PIN input is 1 (pio_engine jmp_pin port).
+    for level, want in ((1, 2), (0, 1)):
+        await run(dut, _jmp("set x, 0", "pin"), cycles=10, jmp_pin=level)
+        assert reg(dut, "y") == want, f"jmp pin with jmp_pin={level}: y={reg(dut, 'y')}, want {want}"
+
+
+# NOT COVERED: jmp !osre (SPEC does not define when OSR counts as empty - no shift counter in
+# the RTL; pio_engine.v:271 is a no-op).
 
 
 @engine_test

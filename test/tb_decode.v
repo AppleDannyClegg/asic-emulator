@@ -13,7 +13,10 @@ module tb_decode ();
   reg [2:0] in_base = 0, out_base = 0, set_base = 0;
   reg [3:0] set_count = 4, out_count = 1, in_count = 1;
   reg shift_left = 0;
-  wire txf_full, rxf_empty, stalled;
+  reg [2:0] side_set_count = 0, sideset_base = 0;   // no side-set unless a test asks
+  reg [7:0] open_drain = 0;
+  reg jmp_pin = 0;
+  wire txf_full, rxf_empty, stalled, rx_overrun;
   wire [31:0] rxf_rdata;
   wire [7:0] pin_out, pin_dir;
   wire [7:0] irq_flags;   // SPEC §8: 8 IRQ flags
@@ -28,6 +31,8 @@ module tb_decode ();
     .in_base(in_base), .out_base(out_base), .set_base(set_base),
     .set_count(set_count), .out_count(out_count), .in_count(in_count),
     .shift_left(shift_left),
+    .side_set_count(side_set_count), .sideset_base(sideset_base), .open_drain(open_drain),
+    .jmp_pin(jmp_pin), .rx_overrun(rx_overrun),
     .irq_flags(irq_flags), .pc_out(pc_out), .stalled(stalled)
   );
 endmodule
