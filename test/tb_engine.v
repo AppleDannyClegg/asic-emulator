@@ -22,6 +22,7 @@ module tb_engine ();
     .in_base(3'd0), .out_base(3'd0), .set_base(3'd0),
     .set_count(4'd1), .out_count(4'd1), .in_count(4'd1),
     .shift_left(1'b0),  // SHIFTCTRL: 0 = LSB-first (UART)
+    .side_set_count(3'd0), .sideset_base(3'd0), .open_drain(8'd0), .jmp_pin(1'b0),
     .irq_flags(irq_flags), .pc_out(pc_out), .stalled(stalled)
   );
 

@@ -82,5 +82,8 @@ async def test_engine_uart_tx(dut):
         dut._log.info(f"byte=0x{byte:02X} samples={samples} start={start} data=0x{data:02X} stop={stop}")
         assert stop == 1, "stop bit must be 1"
         assert data == byte, f"decoded 0x{data:02X} != sent 0x{byte:02X}"
+        # SET pindirs must actually drive the TX pin (else the 'set pindirs' word is a no-op
+        # and the test would pass for the wrong reason - Gort 18:01:37 mutation).
+        assert (int(dut.pin_dir.value) & 1) == 1, "TX pin must be driven (pindirs set)"
 
     dut._log.info("pio_engine UART TX unit test passed")
