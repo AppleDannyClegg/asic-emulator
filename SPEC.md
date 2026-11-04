@@ -73,7 +73,7 @@ asm/RTL divergence Gort found — do not invent codes.
 | `MOV` src (`B[2:0]`) | 0 pins · 1 x · 2 y · 3 null · **4 reserved · 5 status · 6 isr · 7 osr** |
 | `MOV` op (`B[4:3]`) | 00 none · 01 invert `!` · 10 reverse `::` · 11 reserved |
 | `SET` dst (`A`) | 0 pins · 1 x · 2 y · **4 pindirs** (3,5,6,7 reserved) |
-| `IRQ` (`A`) | `A[2]`=wait · `A[1]`=clear(1)/set(0) · `A[0]`=relative(1)/absolute(0) · `B[4:0]`=index 0..7 |
+| `IRQ` (`A`) | `A[2]`=wait · `A[1]`=clear(1)/set(0) · `A[0]`=relative(1)/absolute(0) · `B[2:0]`=index 0..7 |
 | `PUSH/PULL` | `[7]`=0 push / 1 pull · `[6]`=iffull/ifempty · `[5]`=block(1)/noblock(0) · `[4:0]`=0 |
 
 **WAIT polarity:** `WAIT <src>, <pol>, <idx>` — `[7]` = polarity (1=high), `[6:5]` = src, `[4:0]` = index.

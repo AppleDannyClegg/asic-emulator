@@ -6,7 +6,7 @@ Target IHP 130 nm CMOS5L via Tiny Tapeout, **6×4 tiles** (~0.9 mm² gross, ~24K
 ## Engine (per PIO-like state machine)
 
 - 16-bit PC; 32-bit OSR + ISR shift registers; 4-deep TX / 4-deep RX FIFO; 16-bit clock divider
-  (int + frac); 8-pin in/out/set/side-set mapping; 4 IRQ flags; stall-on-blocking.
+  (int + frac); 8-pin in/out/set/side-set mapping; 8 shared IRQ flags; stall-on-blocking.
 - 1 instruction/cycle; optional side-set every cycle.
 - **SHIFTCTRL** per engine: OUT/IN shift **direction** (right = LSB-first default; left = MSB-first).
   UART 8N1 = right/LSB; SPI/I2C = left/MSB. MOV has a bit-reverse variant for odd cases.
