@@ -29,21 +29,36 @@ import sys
 OP = {"jmp": 0b000, "wait": 0b001, "in": 0b010, "out": 0b011,
       "push": 0b100, "pull": 0b100, "mov": 0b101, "irq": 0b110, "set": 0b111}
 
+# Numeric operand codes: RP2040 PIO (the ISA is "PIO-proven"; SPEC.md/docs/ISA.md must
+# pin these - they were unspecified, which is how asm.py and the RTL diverged, Gort 17:30:34).
 JMP_COND = {"always": 0b000, "!x": 0b001, "x--": 0b010, "!y": 0b011,
             "y--": 0b100, "x!=y": 0b101, "pin": 0b110, "!osre": 0b111}
 WAIT_SRC = {"gpio": 0b00, "pin": 0b01, "irq": 0b10}
-IN_SRC = {"pins": 0b000, "x": 0b001, "y": 0b010, "null": 0b011, "isr": 0b100, "osr": 0b101}
+# IN src: 0 pins, 1 x, 2 y, 3 null, 6 isr, 7 osr  (4/5 reserved, as RP2040)
+IN_SRC = {"pins": 0b000, "x": 0b001, "y": 0b010, "null": 0b011, "isr": 0b110, "osr": 0b111}
+# OUT dst: 0 pins, 1 x, 2 y, 3 null, 4 pindirs, 5 pc, 6 isr, 7 exec
 OUT_DST = {"pins": 0b000, "x": 0b001, "y": 0b010, "null": 0b011,
            "pindirs": 0b100, "pc": 0b101, "isr": 0b110, "exec": 0b111}
+# SET dst: 0 pins, 1 x, 2 y, 4 pindirs
 SET_DST = {"pins": 0b000, "x": 0b001, "y": 0b010, "pindirs": 0b100}
+# MOV dst: 0 pins, 1 x, 2 y, 3 null, 4 exec, 5 pc, 6 isr, 7 osr
 MOV_DST = {"pins": 0b000, "x": 0b001, "y": 0b010, "null": 0b011,
-           "isr": 0b100, "osr": 0b101, "status": 0b110}
+           "exec": 0b100, "pc": 0b101, "isr": 0b110, "osr": 0b111}
+# MOV src: 0 pins, 1 x, 2 y, 3 null, 4 status, 5 isr, 6 osr, 7 exec
 MOV_SRC = {"pins": 0b000, "x": 0b001, "y": 0b010, "null": 0b011,
-           "isr": 0b100, "osr": 0b101, "status": 0b111}
+           "status": 0b100, "isr": 0b101, "osr": 0b110, "exec": 0b111}
 
 
 class AsmError(Exception):
     pass
+
+
+def _lookup(table: dict, key: str, what: str):
+    """Dict lookup that raises AsmError (not KeyError) on an unknown name."""
+    try:
+        return table[key]
+    except KeyError:
+        raise AsmError(f"unknown {what} {key!r}") from None
 
 
 def _strip_comment(line: str) -> str:
@@ -77,23 +92,35 @@ def encode(instr: str, labels: dict[str, int], addr: int, side_count: int) -> in
         # [7] block, [6] iffull/ifempty (0), [5] push=1 / pull=0
         operand = (block << 7) | ((1 if op == "push" else 0) << 5)
     elif op == "set":
-        dst = SET_DST[parts[1].lower()]
-        operand = (dst << 5) | (int(parts[2], 0) & 0x1F)
+        dst = _lookup(SET_DST, parts[1].lower(), "SET dst")
+        imm = int(parts[2], 0)
+        if not 0 <= imm <= 0x1F:
+            raise AsmError(f"SET immediate {imm} out of range 0..31")
+        operand = (dst << 5) | imm
     elif op == "out":
-        dst = OUT_DST[parts[1].lower()]
-        operand = (dst << 5) | (int(parts[2], 0) & 0x1F)
+        dst = _lookup(OUT_DST, parts[1].lower(), "OUT dst")
+        n = int(parts[2], 0)
+        if not 0 <= n <= 32:
+            raise AsmError(f"OUT bit count {n} out of range 0..32")
+        operand = (dst << 5) | (n & 0x1F)
     elif op == "in":
-        src = IN_SRC[parts[1].lower()]
-        operand = (src << 5) | (int(parts[2], 0) & 0x1F)
+        src = _lookup(IN_SRC, parts[1].lower(), "IN src")
+        n = int(parts[2], 0)
+        if not 0 <= n <= 32:
+            raise AsmError(f"IN bit count {n} out of range 0..32")
+        operand = (src << 5) | (n & 0x1F)
     elif op == "jmp":
-        cond = JMP_COND[parts[1].lower()]
+        cond = _lookup(JMP_COND, parts[1].lower(), "JMP cond")
         tgt = parts[2]
         t = labels.get(tgt, None)
         if t is None:
             t = int(tgt, 0)
+        # IMEM is 4 banks x 32 (SPEC v0.3.1): JMP addr [4:0] is within-bank, 0..31.
+        if not 0 <= t <= 0x1F:
+            raise AsmError(f"JMP target {t} out of range 0..31 (within-bank)")
         operand = (cond << 5) | (t & 0x1F)
     elif op == "mov":
-        dst = MOV_DST[parts[1].lower()]
+        dst = _lookup(MOV_DST, parts[1].lower(), "MOV dst")
         src_tok = parts[2].lower()
         mop = 0  # 00 none, 01 invert !, 10 reverse ::
         if src_tok.startswith("::"):
@@ -102,11 +129,11 @@ def encode(instr: str, labels: dict[str, int], addr: int, side_count: int) -> in
         elif src_tok.startswith("!"):
             mop = 0b01
             src_tok = src_tok[1:]
-        src = MOV_SRC[src_tok]
+        src = _lookup(MOV_SRC, src_tok, "MOV src")
         # SPEC v0.3: [7:5] dst | [4:3] op | [2:0] src
         operand = (dst << 5) | (mop << 3) | src
     elif op == "wait":
-        src = WAIT_SRC[parts[1].lower()]
+        src = _lookup(WAIT_SRC, parts[1].lower(), "WAIT src")
         pol = int(parts[2], 0) & 1
         idx = int(parts[3], 0) & 0x1F
         operand = (src << 6) | (pol << 5) | idx
@@ -117,7 +144,9 @@ def encode(instr: str, labels: dict[str, int], addr: int, side_count: int) -> in
         if rest and rest[0].lower() in ("rel", "abs"):
             rel = 1 if rest[0].lower() == "rel" else 0
             rest = rest[1:]
-        idx = int(rest[0], 0) & 0x1F if rest else 0
+        idx = int(rest[0], 0) if rest else 0
+        if not 0 <= idx <= 7:
+            raise AsmError(f"IRQ index {idx} out of range 0..7")
         wait = 1 if mode == "wait" else 0
         clear = 1 if mode == "clear" else 0
         operand = (wait << 7) | (clear << 6) | (rel << 5) | idx

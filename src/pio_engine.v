@@ -51,6 +51,9 @@ module pio_engine #(
     input  wire [3:0]  out_count,
     input  wire [3:0]  in_count,
 
+    // SHIFTCTRL: 0 = shift right (LSB-first, UART), 1 = shift left (MSB-first, SPI/I2C)
+    input  wire        shift_left,
+
     output wire [3:0]  irq_flags,
     output wire [IMEM_AW-1:0] pc_out,
     output wire        stalled
@@ -90,6 +93,25 @@ module pio_engine #(
   assign rxf_empty = (rxf_cnt == 3'd0);
   assign rxf_rdata = rxf[0];
 
+  // 2-FF synchroniser for the async GPIO inputs (metastability). `pin_s` is the usable
+  // value everywhere the engine reads pins (IN / WAIT / MOV PIN source). A glitch filter
+  // is a later addition; the synchroniser is the correctness minimum.
+  reg [7:0] pin_s0, pin_s1;
+  always @(posedge clk or negedge rst_n) begin
+    if (!rst_n) begin pin_s0 <= 8'd0; pin_s1 <= 8'd0; end
+    else begin pin_s0 <= pin_in; pin_s1 <= pin_s0; end
+  end
+  wire [7:0] pin_s = pin_s1;
+
+  // MOV value helper: op 0 = copy, 1 = bitwise NOT, 2 = 8-bit bit-reverse ("::")
+  function [7:0] move_val(input [7:0] s, input [1:0] mop);
+    case (mop)
+      2'd1: move_val = ~s;
+      2'd2: move_val = {s[0], s[1], s[2], s[3], s[4], s[5], s[6], s[7]};
+      default: move_val = s;
+    endcase
+  endfunction
+
   // PUSH/PULL: PIO uses opA[7]=0 push / 1 pull (opA is 3 bits here, so use opB[7]? keep PIO's
   // encoding: the PUSH/PULL instruction's bit 7 distinguishes pull; we carry it in opA[2]).
   wire is_pull = opA[2];
@@ -109,46 +131,55 @@ module pio_engine #(
       case (op)
         OP_SET: begin
           case (opA)
-            3'd0: begin // SET pins, imm  -> drive opB[set_count-1:0] onto set_base..set_base+set_count-1
+            3'd0: begin // SET pins, imm  -> drive opB[set_count-1:0] window onto set_base..
               for (i = 0; i < 8; i = i + 1)
-                if (i >= set_base && (i - set_base) < set_count)
+                if (i >= set_base && (i - set_base) < set_count && (i - set_base) < 5)
                   pins[i] <= opB[i - set_base];
             end
             3'd1: x <= opB;
             3'd2: y <= opB;
-            3'd3: pindirs <= opB;
+            3'd3: begin // SET pindirs, imm -> SAME window (was: pindirs <= opB, clobbered all 8)
+              for (i = 0; i < 8; i = i + 1)
+                if (i >= set_base && (i - set_base) < set_count && (i - set_base) < 5)
+                  pindirs[i] <= opB[i - set_base];
+            end
             default: ;
           endcase
         end
         OP_MOV: begin
-          // opA = dest (1=x, 2=y), opB[2:0] = src (1=x, 2=y), opB[3] = invert
+          // opA = dest (1=x, 2=y); opB[2:0] = src (1=x, 2=y, 3=pins); opB[4:3] = op (0 none, 1 !, 2 ::)
           case (opA)
-            3'd1: x <= opB[3] ? ~((opB[2:0] == 3'd2) ? y : x) : ((opB[2:0] == 3'd2) ? y : x);
-            3'd2: y <= opB[3] ? ~((opB[2:0] == 3'd1) ? x : y) : ((opB[2:0] == 3'd1) ? x : y);
+            3'd1: x <= move_val((opB[2:0] == 3'd2) ? y : (opB[2:0] == 3'd3) ? pin_s : x, opB[4:3]);
+            3'd2: y <= move_val((opB[2:0] == 3'd1) ? x : (opB[2:0] == 3'd3) ? pin_s : y, opB[4:3]);
             default: ;
           endcase
         end
         OP_OUT: begin
           // OUT pins, n -> drive osr[out_count-1:0] onto out pins, then osr >>= out_count
           case (opA)
-            3'd0: begin
+            3'd0: begin // OUT pins, n -> drive window from osr (dir per SHIFTCTRL), then shift osr
               for (i = 0; i < 8; i = i + 1)
                 if (i >= out_base && (i - out_base) < out_count)
-                  pins[i] <= osr[i - out_base];
-              osr <= (out_n >= 32) ? 32'b0 : (osr >> out_n);
+                  pins[i] <= shift_left ? osr[31 - (i - out_base)] : osr[i - out_base];
+              osr <= (out_n >= 32) ? 32'b0 : (shift_left ? (osr << out_n) : (osr >> out_n));
             end
             3'd4: begin // OUT pindirs, n
               for (i = 0; i < 8; i = i + 1)
                 if (i >= out_base && (i - out_base) < out_count)
-                  pindirs[i] <= osr[i - out_base];
-              osr <= (out_n >= 32) ? 32'b0 : (osr >> out_n);
+                  pindirs[i] <= shift_left ? osr[31 - (i - out_base)] : osr[i - out_base];
+              osr <= (out_n >= 32) ? 32'b0 : (shift_left ? (osr << out_n) : (osr >> out_n));
             end
             default: ;
           endcase
         end
         OP_IN: begin
           // IN pins, n -> isr = (isr >> in_count) | (pin_window << (32-in_count))
-          isr <= (isr >> in_n) | ({{(32-8){1'b0}}, pin_in} << (32 - in_n));
+          // Read the in_base..in_base+in_count window from the SYNCHRONISED pins, then shift
+          // ISR in the SHIFTCTRL direction. Right (LSB-first): new bits enter at the MSB.
+          // Left (MSB-first): new bits enter at the LSB.
+          isr <= shift_left
+                 ? ((isr << in_n) | ({{(32-8){1'b0}}, (pin_s >> in_base)} & ((32'd1 << in_n) - 32'd1)))
+                 : ((isr >> in_n) | ({{(32-8){1'b0}}, (pin_s >> in_base)} << (32 - in_n)));
         end
         OP_PUSH: begin
           if (is_pull) begin

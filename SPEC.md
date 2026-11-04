@@ -22,7 +22,7 @@ Architecture **C (hybrid)**: one minimal *sequencer* + **4 PIO-style engines**, 
 | Block | Notes |
 |---|---|
 | `engines[0..3]` | PIO-style state machines (see §4) |
-| `imem` | 64 × 16-bit shared instruction SRAM, 16-bit PC per engine (address wraps within a configured window) |
+| `imem` | **4 banks × 32 × 16-bit** = 128 × 16 SRAM; each engine owns one 32-instruction bank; PC is 5-bit **within** the bank; `JMP addr [4:0]` is within-bank |
 | `sequencer` | config FSM + register file (see §9) |
 | `cfg_port` | 4-pin serial configuration/load port (§9), time-muxed on `uio[7:4]` |
 | `gpio` | 8 pins, mapped per-engine to in/out/set/side-set bases |
@@ -57,11 +57,41 @@ The **divider** (§6) is the primary timing knob; delay is fine trim. A `JMP X--
 `MOV` sources (3-bit, up to 8): `pins, x, y, null, isr, osr, status`; with 2-bit `op`: `none, invert(!), reverse(::)`.
 `WAIT` sources: `gpio, pin, irq`.
 
+### Numeric selector codes (NORMATIVE — asm.py, RTL and firmware MUST use these)
+
+Operand **A** = `[7:5]` (3 bits); Operand **B** = `[4:0]` (5 bits), unless noted. These resolve the
+asm/RTL divergence Gort found — do not invent codes.
+
+| Field | Codes |
+|---|---|
+| `JMP` cond (`A`) | 0 always · 1 `!X` · 2 `X--` · 3 `!Y` · 4 `Y--` · 5 `X!=Y` · 6 `PIN` · 7 `!OSRE` |
+| `JMP` addr (`B[4:0]`) | 0..31, within this engine's 32-instruction bank |
+| `WAIT` | `[7]`=polarity (1=wait-high) · `[6:5]`=src (0 gpio, 1 pin, 2 irq) · `[4:0]`=index |
+| `IN` src (`A`) | 0 pins · 1 x · 2 y · 3 null · **6 isr · 7 osr** (4,5 reserved) |
+| `OUT` dst (`A`) | 0 pins · 1 x · 2 y · 3 null · 4 pindirs · 5 pc · 6 isr · 7 exec |
+| `MOV` dst (`A`) | 0 pins · 1 x · 2 y · 3 null · **4 exec · 5 pc · 6 isr · 7 osr** |
+| `MOV` src (`B[2:0]`) | 0 pins · 1 x · 2 y · 3 null · **4 reserved · 5 status · 6 isr · 7 osr** |
+| `MOV` op (`B[4:3]`) | 00 none · 01 invert `!` · 10 reverse `::` · 11 reserved |
+| `SET` dst (`A`) | 0 pins · 1 x · 2 y · **4 pindirs** (3,5,6,7 reserved) |
+| `IRQ` (`A`) | `A[2]`=wait · `A[1]`=clear(1)/set(0) · `A[0]`=relative(1)/absolute(0) · `B[4:0]`=index 0..7 |
+| `PUSH/PULL` | `[7]`=0 push / 1 pull · `[6]`=iffull/ifempty · `[5]`=block(1)/noblock(0) · `[4:0]`=0 |
+
+**WAIT polarity:** `WAIT <src>, <pol>, <idx>` — `[7]` = polarity (1=high), `[6:5]` = src, `[4:0]` = index.
+
+**RP2040 conformance:** these three fields follow the RP2040 datasheet exactly (so `pioasm`/known-good
+PIO test vectors apply): WAIT `[7]`=pol/`[6:5]`=src; PUSH/PULL `[7]`=0 push/1 pull/`[5]`=block;
+MOV src `4`=reserved/`5`=status/`6`=isr/`7`=osr.
+
+**Delay field decode (normative):** `[12:8]` = side-set value in the **top** `side_set_count` bits,
+followed by delay in the low `5 - side_set_count` bits. The integer delay = that many engine cycles.
+RTL MUST decode this field (it is part of the ISA, not a comment).
+
 ## 4. Engine (per state machine ×4)
 
-State: `PC` (16-bit, wrapped to the engine's `[wrap_top:wrap_bottom]` window), `X` (32-bit), `Y` (32-bit),
-`OSR` (32-bit output shift register), `ISR` (32-bit input shift register), `TXF` FIFO (4-deep × 32),
-`RXF` FIFO (4-deep × 32), `IRQ` view.
+State: `PC` (5-bit within the engine's 32-instruction bank; wrapped to `[wrap_top:wrap_bottom]`),
+`X` (32-bit), `Y` (32-bit), `OSR` (32-bit output shift register), `ISR` (32-bit input shift register),
+`TXF` FIFO (4-deep × 32), `RXF` FIFO (4-deep × 32), `IRQ` view. X/Y/OSR/ISR are **32-bit** (OSR/ISR
+must be, for shift ops); X/Y may drop to 16-bit only under hard area pressure.
 
 Config registers (per engine, set by the sequencer):
 
