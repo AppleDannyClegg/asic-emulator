@@ -1,0 +1,7 @@
+# running in test/formal/engine/src/
+read_verilog -formal -sv pio_engine.v engine_formal.v
+prep -top engine_formal
+hierarchy -smtcheck
+rename -witness
+write_jny -no-connections ../model/design.json
+write_rtlil ../model/design.il

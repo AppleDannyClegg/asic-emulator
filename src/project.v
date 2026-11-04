@@ -169,8 +169,9 @@ module tt_um_protocol_emulator (
   end
 
   // ---- pin mux: engine GPIO on uio[7:0] (cfg pins win while cfg_load) ----
-  assign uio_out = engine_pin_out;
-  assign uio_oe  = engine_pin_dir;
+  // uio[7] carries cfg_done (M3.0: dedicated to the cfg handshake; M3.1 proper mux).
+  assign uio_out = {cfg_done, engine_pin_out[6:0]};
+  assign uio_oe  = {1'b1, engine_pin_dir[6:0]};
 
   // status on uo_out
   assign uo_out  = {e_irq[0], e_stalled[0], e_pc[0]};

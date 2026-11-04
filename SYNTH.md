@@ -8,7 +8,8 @@ treat it as a floor, not the final area.
 | module | mapped cells | chip area (um^2) | sequential |
 |---|---|---|---|
 | `pio_engine` (one engine, v0.4 incl. WAIT/IRQ/32-bit X/Y) | 4866 | 90 817 | 46.8% (868 dfrbpq) |
-| `tt_um_protocol_emulator` (M1 UART TX) | see run | small | - |
+| `tt_um_protocol_emulator` (M1 UART TX) | 2747 um^2 | - |
+| **M3 top** `tt_um_protocol_emulator` + 4x `pio_engine` | **14 623** | **310 708** | 55.7% (3534 dfrbpq) |
 
 ## Budget
 

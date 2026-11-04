@@ -1,0 +1,11 @@
+[options]
+mode bmc
+depth 24
+[engines]
+smtbmc z3
+[script]
+read_verilog -formal -sv pio_engine.v engine_formal.v
+prep -top engine_formal
+[files]
+src/pio_engine.v
+test/formal/engine_formal.v

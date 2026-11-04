@@ -1,0 +1,62 @@
+
+ /----------------------------------------------------------------------------\
+ |  yosys -- Yosys Open SYnthesis Suite                                       |
+ |  Copyright (C) 2012 - 2026  Claire Xenia Wolf <claire@yosyshq.com>         |
+ |  Distributed under an ISC-like license, type "license" to see terms        |
+ \----------------------------------------------------------------------------/
+ Yosys 0.70+post (git sha1 0c11ea098be065e585a90a06e7b7da49936cf231, Release, AppleClang clang++ 21.0.0.21000334)
+
+-- Executing script file `design_smt2.ys' --
+
+1. Executing RTLIL frontend.
+Input filename: design_prep.il
+
+2. Executing HIERARCHY pass (managing design hierarchy).
+Attribute `top' found on module `engine_formal'. Setting top module to engine_formal.
+
+2.1. Analyzing design hierarchy..
+Top module:  \engine_formal
+
+2.2. Analyzing design hierarchy..
+Top module:  \engine_formal
+Removed 0 unused modules.
+Module engine_formal directly or indirectly contains formal properties -> setting "keep" attribute.
+
+3. Executing FORMALFF pass.
+
+4. Executing DFFUNMAP pass (unmap clock enable and synchronous reset from FFs).
+
+5. Printing statistics.
+
+=== engine_formal ===
+
+        +----------Local Count, excluding submodules.
+        | 
+       39 wires
+      146 wire bits
+       30 public wires
+      135 public wire bits
+       22 ports
+      120 port bits
+       17 cells
+        1   $add
+        1   $and
+        2   $anyseq
+        2   $assert
+        1   $assume
+        4   $ff
+        2   $le
+        2   $mux
+        1   $ne
+        1   $not
+
+6. Executing SMT2 backend.
+
+6.1. Executing BMUXMAP pass.
+
+6.2. Executing DEMUXMAP pass.
+Creating SMT-LIBv2 representation of module engine_formal.
+
+End of script. Logfile hash: ea60f7296a, time: 0.00s, user: 0.01s, system: 0.01s, MEM: 12.89 MB peak
+Yosys 0.70+post (git sha1 0c11ea098be065e585a90a06e7b7da49936cf231, Release, AppleClang clang++ 21.0.0.21000334)
+Time spent: 59% 2x write_smt2 (0 sec), 19% 2x read_rtlil (0 sec), ...
