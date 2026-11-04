@@ -21,8 +21,8 @@ Architecture **C (hybrid)**: one minimal *sequencer* + **4 PIO-style engines**, 
 
 | Block | Notes |
 |---|---|
-| `engines[0..3]` | PIO-style state machines (see §4) |
-| `imem` | **4 banks × 32 × 16-bit** = 128 × 16 SRAM; each engine owns one 32-instruction bank; PC is 5-bit **within** the bank; `JMP addr [4:0]` is within-bank |
+| `engines[0..NENG-1]` | PIO-style state machines; `NENG` = 2..4, **default 3** (see §4) |
+| `imem` | **NENG banks × 32 × 16-bit** (default 3 → 96×16); each engine owns one 32-instruction bank; PC is 5-bit **within** the bank; `JMP addr [4:0]` is within-bank |
 | `sequencer` | config FSM + register file (see §9) |
 | `cfg_port` | 4-pin serial configuration/load port (§9), time-muxed on `uio[7:4]` |
 | `gpio` | 8 pins, mapped per-engine to in/out/set/side-set bases |
@@ -146,9 +146,22 @@ e.g. SPI-master + chip-select engine). Rel/abs addressing as in PIO.
 
 Register-mapped control port (inside the chip):
 
-- `IMEM_WRITE` (`addr[6:0]` = bank `[6:5]` + offset `[4:0]`, `instr[15:0]`)
-- `SMx_CLKDIV`, `SMx_EXECCTRL`, `SMx_SHIFTCTRL`, `SMx_PINCTRL`
-- `SMx_ENABLE`, `SMx_PC`, `TXF_PUSH`, `RXF_POP`, `IRQ_CLEAR`
+Register-mapped control port (inside the chip). `cmd 0x02 SM_REG` payload = `sm[1:0]<<28 | reg[3:0]<<24 | value[23:0]`; registers:
+
+- `reg 0` CLKDIV (16-bit int)
+- `reg 1` PINCTRL-A = `open_drain[7:0] | in_base[10:8] | out_base[13:11] | set_base[16:14]`
+- `reg 2` SHIFTCTRL
+- `reg 3` ENABLE
+- `reg 4` PC
+- `reg 5` PINCTRL-B = `in_count[3:0] | out_count[7:4] | set_count[11:8] | side_set_count[14:12] | sideset_base[17:15]`
+
+PINCTRL is **two writes** (`reg 1` + `reg 5`) because the 24-bit value cannot hold 3 bases + 3 counts +
+`open_drain[7:0]` + `side_set_count` (29 bits).
+
+- `cmd 0x01 IMEM_WRITE` payload = `addr[6:0]` (bank `[6:5]` + offset `[4:0]`) `<<16 | instr[15:0]`
+- `cmd 0x03 TXF_PUSH` payload = `sm[1:0]<<28 | word[27:0]`
+- `cmd 0x04 DONE` (start engines)
+- `RXF_POP` / `IRQ_CLEAR` / status readback = M3.2 (via the bidirectional cfg_dout).
 
 **Post-fab load (Tiny Tapeout has no host bus):** a 4-pin serial **config port** time-muxed on
 `uio[7:4]` when `cfg_load=1`:
@@ -165,9 +178,13 @@ the two never drive the same pin in one `cfg_clk` phase.
 
 ## 10. Area plan
 
-Budget ~24K cells. Rough allocation: 4 engines + 4×32×16 (128×16) IMEM (SRAM) + FIFOs + sequencer.
-Fixtures to keep in check: 128×16 IMEM as **SRAM**, not flops; 4-deep FIFOs; per-engine banks.
-**Fallback order if over budget:** 4 → 2 engines → drop sequencer to a fixed FSM.
+Budget is **mapped IHP sg13g2 area**, not generic gate count. 6×4 usable ≈ 750,000 µm².
+Measured (M3 top, pre-PnR): `NENG=3` = 233,707 µm² (~31%), `NENG=4` = 311,231 µm² (~41%) — both fit
+pre-PnR, so **default NENG=3** (functional floor + PnR headroom). PnR typically ×1.5-2; if utilisation
+overflows, apply levers in order: **X/Y→16** (`XY_W` param, ~-6%), **FIFO_DEPTH 4→2** (~-8.5%, needs a
+SPEC §7 revision + firmware re-check), then **2 engines**. All levers are compile-time params, no rewrite.
+
+Fixtures: IMEM/FIFOs synthesise as flops (not SRAM) — an SRAM macro would shrink area further.
 
 ## 11. What we do differently (competition differentiators)
 
