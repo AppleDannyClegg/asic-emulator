@@ -179,10 +179,11 @@ the two never drive the same pin in one `cfg_clk` phase.
 ## 10. Area plan
 
 Budget is **mapped IHP sg13g2 area**, not generic gate count. 6×4 usable ≈ 750,000 µm².
-Measured (M3 top, pre-PnR): `NENG=3` = 233,707 µm² (~31%), `NENG=4` = 311,231 µm² (~41%) — both fit
-pre-PnR, so **default NENG=3** (functional floor + PnR headroom). PnR typically ×1.5-2; if utilisation
-overflows, apply levers in order: **X/Y→16** (`XY_W` param, ~-6%), **FIFO_DEPTH 4→2** (~-8.5%, needs a
-SPEC §7 revision + firmware re-check), then **2 engines**. All levers are compile-time params, no rewrite.
+Measured (M3.1 top, pre-PnR, per-engine PINCTRL decoded): shipped default **NENG=3, XY_W=32, FIFO=4 =
+282,452 µm² (~38%)**; `NENG=4` same config = 375,627 µm² (~50%). At a typical ~1.5-2× PnR/CTS growth
+that is ~57-76% (3 engines, fits) vs ~75-100% (4 engines, risky) — hence **default NENG=3**.
+Levers if PnR is tight: `FIFO_DEPTH 4→2` (~-7%), `XY_W 32→16` (~-5%), then fewer engines. All are
+compile-time params, no rewrite (FIFO depth change needs a SPEC §7 revision + firmware re-check).
 
 Fixtures: IMEM/FIFOs synthesise as flops (not SRAM) — an SRAM macro would shrink area further.
 
