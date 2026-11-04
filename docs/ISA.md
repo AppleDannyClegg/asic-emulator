@@ -1,4 +1,4 @@
-# ISA + engine model (v0 draft — Legion, board 4 Nov 2026)
+# ISA + engine model — **FROZEN v0.1** (Legion, board 4 Nov 2026; Cerebro/Ash objection window)
 
 Architecture **C: a minimal sequencer + 4 PIO-style engines**, shared instruction SRAM, up to 8 GPIO.
 Target IHP 130 nm CMOS5L via Tiny Tapeout, **6×4 tiles** (~0.9 mm² gross, ~24K cells).
@@ -26,7 +26,9 @@ clock divider** (set `div = engine_clk / (baud × cycles_per_bit)`), never from 
 
 ## Opcodes
 
-`JMP` / `WAIT` / `IN` / `OUT` / `PUSH`-`PULL` / `MOV` / `IRQ` / `SET`
+`JMP`(000) / `WAIT`(001) / `IN`(010) / `OUT`(011) / `PUSH`-`PULL`(100) / `MOV`(101) / `IRQ`(110) / `SET`(111)
+
+Instruction memory: **64 × 16-bit shared SRAM**, 16-bit PC per engine.
 - JMP conds: always, !X, X--, !Y, Y--, X!=Y, PIN, !OSRE.
 - WAIT: gpio/pin/irq, polarity.
 - IN src: pins/x/y/isr/osr, n bits. OUT dst: pins/x/y/pc/isr/exec, n bits.
