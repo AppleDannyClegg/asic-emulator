@@ -60,6 +60,7 @@ class Ref:
         self.in_base, self.in_count = in_base, in_count
         self.shift_left = shift_left
         self.delay_cnt = 0
+        self.rx_overrun = 0
         self.pin_s = 0  # 2-FF synchronised pin input
 
     def step(self):
@@ -157,15 +158,14 @@ class Ref:
             if is_pull:
                 if self.txf:
                     self.osr = self.txf.pop(0)
-                else:
-                    self.irq |= 1  # RTL sets irq[0] on an empty PULL (block and noblock)
-                    if is_block:
-                        self.pc = (self.pc - 1) & 0x1F  # stall
+                elif is_block:
+                    self.pc = (self.pc - 1) & 0x1F  # stall (no IRQ in current RTL)
+                # noblock: proceed with stale OSR
             else:
                 if len(self.rxf) < FIFO_DEPTH:
                     self.rxf.append(self.isr)
                 else:
-                    self.irq |= 1  # RTL: RX overrun sets irq[0]
+                    self.rx_overrun = 1  # sticky status, not a user IRQ
         elif op == OP_JMP:
             if opA == 0:
                 self.pc = opB & 0x1F
@@ -195,7 +195,7 @@ class Ref:
             elif src == 1:
                 val = (self.pin_s >> self.in_base) & 0xFF
             else:
-                val = self.irq & 0xF   # RTL irq is 4-bit (SPEC §8 says 8 - see finding)
+                val = self.irq           # SPEC §8: 8 flags (RTL widened to irq[7:0])
             if ((val >> idx) & 1) != pol:
                 self.pc = (self.pc - 1) & 0x1F  # stall
         elif op == OP_IRQ:
@@ -247,10 +247,9 @@ def rand_instr(rng):
     # irq set/clear (not wait). OPERAND layout is [7]wait [6]clear [5]rel [4:0]idx,
     # i.e. the whole 8-bit operand, not the A/B split - pack it explicitly.
     clear = rng.randrange(2)
-    # FINDING: SPEC.md §8 says '8 shared IRQ flags' but pio_engine.v uses irq[3:0] (4) and
-    # docs/ISA.md says '4 IRQ flags'. The generator is clamped to the IMPLEMENTED 4 so the
-    # conformance test is meaningful; the 8-vs-4 divergence is reported to the board.
-    operand = (clear << 6) | rng.randrange(4)
+    # SPEC §8: 8 shared IRQ flags -> exercise idx 0..7 (the RTL was widened to irq[7:0]
+    # after this test found idx 4..7 silently dropped; see the board finding).
+    operand = (clear << 6) | rng.randrange(8)
     return enc(OP_IRQ, delay, (operand >> 5) & 0x7, operand & 0x1F)
 
 
@@ -272,6 +271,8 @@ def observe(dut):
         "pins": int(dut.pin_out.value),
         "dir": int(dut.pin_dir.value),
         "irq": int(dut.irq_flags.value),
+        "x": int(dut.dut.x.value),
+        "y": int(dut.dut.y.value),
     }
 
 
@@ -302,6 +303,9 @@ async def test_random_programs_match_model(dut):
         dut.in_base.value = in_base
         dut.in_count.value = in_count
         dut.shift_left.value = shift_left
+        # drive the engine inputs tb_decode.v leaves unconnected (else Z -> X on pin_dir)
+        for _n in ("side_set_count", "sideset_base", "open_drain", "jmp_pin"):
+            getattr(dut.dut, _n).value = 0
         # clean reset, then release before touching the FIFOs (the RTL host-push path is
         # gated by txf_full but not by rst_n, so pushing during reset is racy)
         dut.rst_n.value = 0
@@ -328,9 +332,16 @@ async def test_random_programs_match_model(dut):
             await RisingEdge(dut.clk)
             await ReadOnly()
             ref.step()
+            unresolved = [k for k in ("pc", "pins", "dir", "irq")
+                          if not {"pc": dut.pc_out, "pins": dut.pin_out,
+                                  "dir": dut.pin_dir, "irq": dut.irq_flags}[k].value.is_resolvable]
+            if unresolved:
+                mismatches.append((trial, cyc, "X:" + ",".join(unresolved), None, None, prog))
+                break
             got = observe(dut)
             for k, v in got.items():
-                exp = {"pc": ref.pc, "pins": ref.pins, "dir": ref.pindirs, "irq": ref.irq}[k]
+                exp = {"pc": ref.pc, "pins": ref.pins, "dir": ref.pindirs,
+                       "irq": ref.irq, "x": ref.x, "y": ref.y}[k]
                 if v != exp:
                     mismatches.append((trial, cyc, k, v, exp, prog))
                     break
