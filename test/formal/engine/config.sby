@@ -4,8 +4,7 @@ depth 24
 [engines]
 smtbmc z3
 [script]
-read_verilog -formal -sv pio_engine.v engine_formal.v
-prep -top engine_formal
+read_verilog -formal -DFORMAL -sv pio_engine.v
+prep -top pio_engine
 [files]
 src/pio_engine.v
-test/formal/engine_formal.v

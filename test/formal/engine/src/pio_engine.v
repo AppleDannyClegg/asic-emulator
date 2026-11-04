@@ -295,4 +295,18 @@ module pio_engine #(
   assign pc_out    = pc;
   assign stalled   = enable && (op == OP_PUSH) && is_pull && is_block && (txf_cnt == 0);
 
+
+`ifdef FORMAL
+  // Formal properties (Wheatley) - inside the DUT so the refs resolve (read_verilog does NOT
+  // resolve hierarchical refs, which made an external wrapper vacuous - Gort 18:11:58).
+  // f_boot holds the asserts off for 2 cycles so the anyinit flop values do not false-fail.
+  initial assume (!rst_n);   // constrain reset at t=0 so anyinit flops do not false-fail
+  reg [1:0] f_boot = 2'b00;
+  always @(posedge clk) if (f_boot != 2'b11) f_boot <= f_boot + 1'b1;
+  always @(posedge clk) if (rst_n && f_boot[1]) begin
+    assert (txf_cnt <= FIFO_DEPTH[FCW-1:0]);
+    assert (rxf_cnt <= FIFO_DEPTH[FCW-1:0]);
+  end
+`endif
+
 endmodule

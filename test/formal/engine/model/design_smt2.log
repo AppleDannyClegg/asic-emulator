@@ -12,15 +12,15 @@
 Input filename: design_prep.il
 
 2. Executing HIERARCHY pass (managing design hierarchy).
-Attribute `top' found on module `engine_formal'. Setting top module to engine_formal.
+Attribute `top' found on module `pio_engine'. Setting top module to pio_engine.
 
 2.1. Analyzing design hierarchy..
-Top module:  \engine_formal
+Top module:  \pio_engine
 
 2.2. Analyzing design hierarchy..
-Top module:  \engine_formal
+Top module:  \pio_engine
 Removed 0 unused modules.
-Module engine_formal directly or indirectly contains formal properties -> setting "keep" attribute.
+Module pio_engine directly or indirectly contains formal properties -> setting "keep" attribute.
 
 3. Executing FORMALFF pass.
 
@@ -28,35 +28,54 @@ Module engine_formal directly or indirectly contains formal properties -> settin
 
 5. Printing statistics.
 
-=== engine_formal ===
+=== pio_engine ===
 
         +----------Local Count, excluding submodules.
         | 
-       39 wires
-      146 wire bits
-       30 public wires
-      135 public wire bits
-       22 ports
-      120 port bits
-       17 cells
-        1   $add
-        1   $and
-        2   $anyseq
+      588 wires
+     5410 wire bits
+       90 public wires
+      995 public wire bits
+       30 ports
+      180 port bits
+      571 cells
+        5   $add
+        5   $and
+       19   $anyinit
+        4   $anyseq
         2   $assert
-        1   $assume
+        2   $assume
+       28   $eq
         4   $ff
-        2   $le
-        2   $mux
-        1   $ne
-        1   $not
+       25   $ge
+        1   $initstate
+        3   $le
+       44   $logic_and
+       15   $logic_not
+        1   $logic_or
+       32   $lt
+        1   $mem_v2
+      251   $mux
+        4   $ne
+        1   $neg
+        4   $not
+        4   $or
+       23   $pmux
+        4   $reduce_bool
+        3   $reduce_or
+        2   $shift
+       34   $shiftx
+        5   $shl
+        4   $shr
+       41   $sub
 
 6. Executing SMT2 backend.
 
 6.1. Executing BMUXMAP pass.
 
 6.2. Executing DEMUXMAP pass.
-Creating SMT-LIBv2 representation of module engine_formal.
+Creating SMT-LIBv2 representation of module pio_engine.
 
-End of script. Logfile hash: ea60f7296a, time: 0.00s, user: 0.01s, system: 0.01s, MEM: 12.89 MB peak
+End of script. Logfile hash: 9aa048e8fa, time: 0.02s, user: 0.03s, system: 0.01s, MEM: 15.94 MB peak
 Yosys 0.70+post (git sha1 0c11ea098be065e585a90a06e7b7da49936cf231, Release, AppleClang clang++ 21.0.0.21000334)
-Time spent: 59% 2x write_smt2 (0 sec), 19% 2x read_rtlil (0 sec), ...
+Time spent: 81% 2x write_smt2 (0 sec), 12% 2x read_rtlil (0 sec), ...

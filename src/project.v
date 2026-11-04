@@ -25,7 +25,9 @@
 
 `default_nettype none
 
-module tt_um_protocol_emulator (
+module tt_um_protocol_emulator #(
+    parameter integer NENG = 4   // number of pio_engine instances (3 = functional floor)
+) (
     input  wire [7:0] ui_in,
     output wire [7:0] uo_out,
     input  wire [7:0] uio_in,
@@ -35,8 +37,6 @@ module tt_um_protocol_emulator (
     input  wire       clk,
     input  wire       rst_n
 );
-
-  localparam NENG = 4;
 
   // cfg pins (on uio[7:4] while cfg_load)
   wire cfg_clk  = uio_in[4];
@@ -70,8 +70,18 @@ module tt_um_protocol_emulator (
   // pin bases/counts: one shared convention for M3 (engine 0 tx etc. are firmware's job);
   // for now expose fixed nibble fields from pinctrl: base = pinctrl[6:4], count = pinctrl[3:0]+1
   // (firmware sets these; M3.1 makes it a proper register map). Defaults below.
-  wire [7:0] engine_pin_out = e_pin_out[0] | e_pin_out[1] | e_pin_out[2] | e_pin_out[3];
-  wire [7:0] engine_pin_dir = e_pin_dir[0] | e_pin_dir[1] | e_pin_dir[2] | e_pin_dir[3];
+  // OR only over the instantiated engines (NENG), so a 3-engine build does not read e_pin_out[3].
+  reg  [7:0] engine_pin_out;
+  reg  [7:0] engine_pin_dir;
+  integer gi;
+  always @* begin
+    engine_pin_out = 8'b0;
+    engine_pin_dir = 8'b0;
+    for (gi = 0; gi < NENG; gi = gi + 1) begin
+      engine_pin_out = engine_pin_out | e_pin_out[gi];
+      engine_pin_dir = engine_pin_dir | e_pin_dir[gi];
+    end
+  end
 
   genvar g;
   generate
@@ -130,8 +140,10 @@ module tt_um_protocol_emulator (
       end
     end else begin
       cfg_clk_d <= cfg_clk;
-      imem_we[0] <= 1'b0; imem_we[1] <= 1'b0; imem_we[2] <= 1'b0; imem_we[3] <= 1'b0;
-      txf_we[0]  <= 1'b0; txf_we[1]  <= 1'b0; txf_we[2]  <= 1'b0; txf_we[3]  <= 1'b0;
+      for (k = 0; k < NENG; k = k + 1) begin
+        imem_we[k] <= 1'b0;
+        txf_we[k]  <= 1'b0;
+      end
       cfg_done <= 1'b0;
 
       if (cfg_load && cfg_clk_rise) begin
@@ -141,9 +153,11 @@ module tt_um_protocol_emulator (
           // execute on the 40th bit (cmd/payload are the completed frame)
           case ({shreg[38:32], cfg_din})
             8'h01: begin // IMEM_WRITE
-              imem_we[im_addr[6:5]] <= 1'b1;
-              imem_addr[im_addr[6:5]] <= im_addr[4:0];
-              imem_wdata[im_addr[6:5]] <= im_data;
+              if (im_addr[6:5] < NENG) begin
+                imem_we[im_addr[6:5]] <= 1'b1;
+                imem_addr[im_addr[6:5]] <= im_addr[4:0];
+                imem_wdata[im_addr[6:5]] <= im_data;
+              end
             end
             8'h02: begin // SM_REG
               case (reg_sel)
@@ -155,8 +169,10 @@ module tt_um_protocol_emulator (
               endcase
             end
             8'h03: begin // TXF_PUSH
-              txf_we[sm_sel] <= 1'b1;
-              txf_wdata[sm_sel] <= tx_word;
+              if (sm_sel < NENG) begin
+                txf_we[sm_sel] <= 1'b1;
+                txf_wdata[sm_sel] <= tx_word;
+              end
             end
             default: ;
           endcase
@@ -177,6 +193,6 @@ module tt_um_protocol_emulator (
   assign uo_out  = {e_irq[0], e_stalled[0], e_pc[0]};
 
   // unused
-  wire _unused = &{ena, ui_in, e_txf_full[0], e_txf_full[1], e_txf_full[2], e_txf_full[3], 1'b0};
+  wire _unused = &{ena, ui_in, e_txf_full[0], 1'b0};
 
 endmodule

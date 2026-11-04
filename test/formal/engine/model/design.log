@@ -15,99 +15,75 @@ Warning: Replacing memory \rxf with list of registers. See pio_engine.v:255
 Warning: Replacing memory \txf with list of registers. See pio_engine.v:176
 Successfully finished Verilog frontend.
 
-2. Executing Verilog-2005 frontend: engine_formal.v
-Parsing formal SystemVerilog input from `engine_formal.v' to AST representation.
-Generating RTLIL representation for module `\engine_formal'.
-engine_formal.v:37: Warning: Identifier `\dut.txf_cnt' is implicitly declared.
-engine_formal.v:38: Warning: Identifier `\dut.rxf_cnt' is implicitly declared.
-Successfully finished Verilog frontend.
+2. Executing PREP pass.
 
-3. Executing PREP pass.
+2.1. Executing HIERARCHY pass (managing design hierarchy).
 
-3.1. Executing HIERARCHY pass (managing design hierarchy).
+2.1.1. Analyzing design hierarchy..
+Top module:  \pio_engine
 
-3.1.1. Analyzing design hierarchy..
-Top module:  \engine_formal
-Used module:     \pio_engine
-Parameter \IMEM_AW = 5
-Parameter \XY_W = 32
-Parameter \FIFO_DEPTH = 4
+2.1.2. Analyzing design hierarchy..
+Top module:  \pio_engine
+Removed 0 unused modules.
+Module pio_engine directly or indirectly contains formal properties -> setting "keep" attribute.
 
-3.1.2. Executing AST frontend in derive mode using pre-parsed AST for module `\pio_engine'.
-Parameter \IMEM_AW = 5
-Parameter \XY_W = 32
-Parameter \FIFO_DEPTH = 4
-Generating RTLIL representation for module `$paramod$dfb5d276a71cbecdd4cf6f6b50ac4ba59fbc119d\pio_engine'.
-Warning: Replacing memory \rxf with list of registers. See pio_engine.v:255
-Warning: Replacing memory \txf with list of registers. See pio_engine.v:176
+2.2. Executing PROC pass (convert processes to netlists).
 
-3.1.3. Analyzing design hierarchy..
-Top module:  \engine_formal
-Used module:     $paramod$dfb5d276a71cbecdd4cf6f6b50ac4ba59fbc119d\pio_engine
-
-3.1.4. Analyzing design hierarchy..
-Top module:  \engine_formal
-Used module:     $paramod$dfb5d276a71cbecdd4cf6f6b50ac4ba59fbc119d\pio_engine
-Removing unused module `\pio_engine'.
-Removed 1 unused modules.
-Module engine_formal directly or indirectly contains formal properties -> setting "keep" attribute.
-
-3.2. Executing PROC pass (convert processes to netlists).
-
-3.2.1. Executing PROC_CLEAN pass (remove empty switches from decision trees).
+2.2.1. Executing PROC_CLEAN pass (remove empty switches from decision trees).
 Cleaned up 0 empty switches.
 
-3.2.2. Executing PROC_RMDEAD pass (remove dead branches from decision trees).
-Removed 1 dead cases from process $proc$pio_engine.v:169$620 in module $paramod$dfb5d276a71cbecdd4cf6f6b50ac4ba59fbc119d\pio_engine.
-Marked 15 switch rules as full_case in process $proc$pio_engine.v:169$620 in module $paramod$dfb5d276a71cbecdd4cf6f6b50ac4ba59fbc119d\pio_engine.
-Marked 1 switch rules as full_case in process $proc$pio_engine.v:111$577 in module $paramod$dfb5d276a71cbecdd4cf6f6b50ac4ba59fbc119d\pio_engine.
-Marked 3 switch rules as full_case in process $proc$pio_engine.v:92$571 in module $paramod$dfb5d276a71cbecdd4cf6f6b50ac4ba59fbc119d\pio_engine.
-Marked 1 switch rules as full_case in process $proc$pio_engine.v:71$558 in module $paramod$dfb5d276a71cbecdd4cf6f6b50ac4ba59fbc119d\pio_engine.
+2.2.2. Executing PROC_RMDEAD pass (remove dead branches from decision trees).
+Removed 1 dead cases from process $proc$pio_engine.v:169$74 in module pio_engine.
+Marked 15 switch rules as full_case in process $proc$pio_engine.v:169$74 in module pio_engine.
+Marked 1 switch rules as full_case in process $proc$pio_engine.v:111$31 in module pio_engine.
+Marked 3 switch rules as full_case in process $proc$pio_engine.v:92$25 in module pio_engine.
+Marked 1 switch rules as full_case in process $proc$pio_engine.v:71$12 in module pio_engine.
 Removed a total of 1 dead cases.
 
-3.2.3. Executing PROC_PRUNE pass (remove redundant assignments in processes).
-Removed 3 redundant assignments.
-Promoted 13 assignments to connections.
+2.2.3. Executing PROC_PRUNE pass (remove redundant assignments in processes).
+Removed 4 redundant assignments.
+Promoted 14 assignments to connections.
 
-3.2.4. Executing PROC_INIT pass (extract init attributes).
-Found init rule in `\engine_formal.$proc$engine_formal.v:20$552'.
-  Set init value: \boot = 2'00
+2.2.4. Executing PROC_INIT pass (extract init attributes).
+Found init rule in `\pio_engine.$proc$pio_engine.v:304$557'.
+  Set init value: \f_boot = 2'00
 
-3.2.5. Executing PROC_ARST pass (detect async resets in processes).
-Found async reset \rst_n in `$paramod$dfb5d276a71cbecdd4cf6f6b50ac4ba59fbc119d\pio_engine.$proc$pio_engine.v:169$620'.
-Found async reset \rst_n in `$paramod$dfb5d276a71cbecdd4cf6f6b50ac4ba59fbc119d\pio_engine.$proc$pio_engine.v:111$577'.
-Found async reset \rst_n in `$paramod$dfb5d276a71cbecdd4cf6f6b50ac4ba59fbc119d\pio_engine.$proc$pio_engine.v:92$571'.
+2.2.5. Executing PROC_ARST pass (detect async resets in processes).
+Found async reset \rst_n in `\pio_engine.$proc$pio_engine.v:169$74'.
+Found async reset \rst_n in `\pio_engine.$proc$pio_engine.v:111$31'.
+Found async reset \rst_n in `\pio_engine.$proc$pio_engine.v:92$25'.
 
-3.2.6. Executing PROC_ROM pass (convert switches to ROMs).
+2.2.6. Executing PROC_ROM pass (convert switches to ROMs).
 Converted 0 switches.
 <suppressed ~69 debug messages>
 
-3.2.7. Executing PROC_MUX pass (convert decision trees to multiplexers).
-Creating decoders for process `\engine_formal.$proc$engine_formal.v:20$552'.
-Creating decoders for process `\engine_formal.$proc$engine_formal.v:40$549'.
-     1/2: \a_rxf_range_EN
-     2/2: \a_txf_range_EN
-Creating decoders for process `\engine_formal.$proc$engine_formal.v:21$545'.
-     1/1: $0\boot[1:0]
-Creating decoders for process `$paramod$dfb5d276a71cbecdd4cf6f6b50ac4ba59fbc119d\pio_engine.$proc$pio_engine.v:169$620'.
-     1/79: $10$lookahead\irq$619[3:0]$1067
-     2/79: $6$bitselwrite$pos$pio_engine.v:282$553[2:0]$1065
-     3/79: $6$bitselwrite$pos$pio_engine.v:283$554[2:0]$1066
-     4/79: $9$lookahead\irq$619[3:0]$1062
-     5/79: $5$bitselwrite$pos$pio_engine.v:283$554[2:0]$1061
-     6/79: $5$bitselwrite$pos$pio_engine.v:282$553[2:0]$1060
-     7/79: $4$lookahead\irq$619[3:0]$715 [3:1]
-     8/79: $6$mem2reg_wr$\rxf$pio_engine.v:255$556_DATA[31:0]$1049
-     9/79: $8$lookahead\irq$619[0:0]$1050
-    10/79: $7$lookahead\irq$619[0:0]$1046
+2.2.7. Executing PROC_MUX pass (convert decision trees to multiplexers).
+Creating decoders for process `\pio_engine.$proc$pio_engine.v:304$557'.
+Creating decoders for process `\pio_engine.$proc$pio_engine.v:303$554'.
+Creating decoders for process `\pio_engine.$proc$pio_engine.v:306$548'.
+     1/2: $assert$pio_engine.v:308$552_EN
+     2/2: $assert$pio_engine.v:307$550_EN
+Creating decoders for process `\pio_engine.$proc$pio_engine.v:305$545'.
+     1/1: $0\f_boot[1:0]
+Creating decoders for process `\pio_engine.$proc$pio_engine.v:169$74'.
+     1/79: $10$lookahead\irq$73[3:0]$521
+     2/79: $6$bitselwrite$pos$pio_engine.v:282$7[2:0]$519
+     3/79: $6$bitselwrite$pos$pio_engine.v:283$8[2:0]$520
+     4/79: $9$lookahead\irq$73[3:0]$516
+     5/79: $5$bitselwrite$pos$pio_engine.v:283$8[2:0]$515
+     6/79: $5$bitselwrite$pos$pio_engine.v:282$7[2:0]$514
+     7/79: $4$lookahead\irq$73[3:0]$169 [3:1]
+     8/79: $6$mem2reg_wr$\rxf$pio_engine.v:255$10_DATA[31:0]$503
+     9/79: $8$lookahead\irq$73[0:0]$504
+    10/79: $7$lookahead\irq$73[0:0]$500
     11/79: $8\i[31:0]
-    12/79: $6$lookahead\irq$619[0:0]$1044
-    13/79: $5$lookahead\irq$619[0:0]$1042
+    12/79: $6$lookahead\irq$73[0:0]$498
+    13/79: $5$lookahead\irq$73[0:0]$496
     14/79: $7\i[31:0]
-    15/79: $5$mem2reg_wr$\rxf$pio_engine.v:255$556_DATA[31:0]$1041
-    16/79: $5$mem2reg_wr$\rxf$pio_engine.v:255$556_ADDR[1:0]$1040
-    17/79: $4$lookahead\irq$619[3:0]$715 [0]
-    18/79: $6$mem2reg_wr$\rxf$pio_engine.v:255$556_ADDR[1:0]$1048
+    15/79: $5$mem2reg_wr$\rxf$pio_engine.v:255$10_DATA[31:0]$495
+    16/79: $5$mem2reg_wr$\rxf$pio_engine.v:255$10_ADDR[1:0]$494
+    17/79: $4$lookahead\irq$73[3:0]$169 [0]
+    18/79: $6$mem2reg_wr$\rxf$pio_engine.v:255$10_ADDR[1:0]$502
     19/79: $0\pindirs[7:0] [7]
     20/79: $0\pindirs[7:0] [6]
     21/79: $0\pindirs[7:0] [5]
@@ -118,10 +94,10 @@ Creating decoders for process `$paramod$dfb5d276a71cbecdd4cf6f6b50ac4ba59fbc119d
     26/79: $0\pindirs[7:0] [0]
     27/79: $4\i[31:0]
     28/79: $6\i[31:0]
-    29/79: $4$mem2reg_wr$\rxf$pio_engine.v:255$556_DATA[31:0]$714
-    30/79: $4$mem2reg_wr$\rxf$pio_engine.v:255$556_ADDR[1:0]$713
-    31/79: $4$bitselwrite$pos$pio_engine.v:283$554[2:0]$712
-    32/79: $4$bitselwrite$pos$pio_engine.v:282$553[2:0]$711
+    29/79: $4$mem2reg_wr$\rxf$pio_engine.v:255$10_DATA[31:0]$168
+    30/79: $4$mem2reg_wr$\rxf$pio_engine.v:255$10_ADDR[1:0]$167
+    31/79: $4$bitselwrite$pos$pio_engine.v:283$8[2:0]$166
+    32/79: $4$bitselwrite$pos$pio_engine.v:282$7[2:0]$165
     33/79: $0\pins[7:0] [7]
     34/79: $0\pins[7:0] [6]
     35/79: $0\pins[7:0] [5]
@@ -130,27 +106,27 @@ Creating decoders for process `$paramod$dfb5d276a71cbecdd4cf6f6b50ac4ba59fbc119d
     38/79: $0\pins[7:0] [2]
     39/79: $0\pins[7:0] [1]
     40/79: $0\pins[7:0] [0]
-    41/79: $3$mem2reg_wr$\rxf$pio_engine.v:255$556_DATA[31:0]$659
-    42/79: $3$mem2reg_wr$\rxf$pio_engine.v:255$556_ADDR[1:0]$658
-    43/79: $3$bitselwrite$pos$pio_engine.v:283$554[2:0]$657
-    44/79: $3$bitselwrite$pos$pio_engine.v:282$553[2:0]$656
+    41/79: $3$mem2reg_wr$\rxf$pio_engine.v:255$10_DATA[31:0]$113
+    42/79: $3$mem2reg_wr$\rxf$pio_engine.v:255$10_ADDR[1:0]$112
+    43/79: $3$bitselwrite$pos$pio_engine.v:283$8[2:0]$111
+    44/79: $3$bitselwrite$pos$pio_engine.v:282$7[2:0]$110
     45/79: $3\i[31:0]
-    46/79: $2$lookahead\irq$619[3:0]$654
-    47/79: $2$mem2reg_wr$\rxf$pio_engine.v:255$556_DATA[31:0]$653
-    48/79: $2$mem2reg_wr$\rxf$pio_engine.v:255$556_ADDR[1:0]$652
-    49/79: $2$bitselwrite$pos$pio_engine.v:283$554[2:0]$651
-    50/79: $2$bitselwrite$pos$pio_engine.v:282$553[2:0]$650
+    46/79: $2$lookahead\irq$73[3:0]$108
+    47/79: $2$mem2reg_wr$\rxf$pio_engine.v:255$10_DATA[31:0]$107
+    48/79: $2$mem2reg_wr$\rxf$pio_engine.v:255$10_ADDR[1:0]$106
+    49/79: $2$bitselwrite$pos$pio_engine.v:283$8[2:0]$105
+    50/79: $2$bitselwrite$pos$pio_engine.v:282$7[2:0]$104
     51/79: $2\i[31:0]
-    52/79: $2$mem2reg_wr$\txf$pio_engine.v:176$555_ADDR[1:0]$646
-    53/79: $2$mem2reg_wr$\txf$pio_engine.v:176$555_DATA[31:0]$647
-    54/79: $1$lookahead\irq$619[3:0]$635
-    55/79: $1$mem2reg_wr$\rxf$pio_engine.v:255$556_DATA[31:0]$634
-    56/79: $1$mem2reg_wr$\rxf$pio_engine.v:255$556_ADDR[1:0]$633
-    57/79: $1$bitselwrite$pos$pio_engine.v:283$554[2:0]$630
-    58/79: $1$bitselwrite$pos$pio_engine.v:282$553[2:0]$629
+    52/79: $2$mem2reg_wr$\txf$pio_engine.v:176$9_ADDR[1:0]$100
+    53/79: $2$mem2reg_wr$\txf$pio_engine.v:176$9_DATA[31:0]$101
+    54/79: $1$lookahead\irq$73[3:0]$89
+    55/79: $1$mem2reg_wr$\rxf$pio_engine.v:255$10_DATA[31:0]$88
+    56/79: $1$mem2reg_wr$\rxf$pio_engine.v:255$10_ADDR[1:0]$87
+    57/79: $1$bitselwrite$pos$pio_engine.v:283$8[2:0]$84
+    58/79: $1$bitselwrite$pos$pio_engine.v:282$7[2:0]$83
     59/79: $1\i[31:0]
-    60/79: $1$mem2reg_wr$\txf$pio_engine.v:176$555_DATA[31:0]$632
-    61/79: $1$mem2reg_wr$\txf$pio_engine.v:176$555_ADDR[1:0]$631
+    60/79: $1$mem2reg_wr$\txf$pio_engine.v:176$9_DATA[31:0]$86
+    61/79: $1$mem2reg_wr$\txf$pio_engine.v:176$9_ADDR[1:0]$85
     62/79: $0\rxf[3][31:0]
     63/79: $0\rxf[2][31:0]
     64/79: $0\rxf[1][31:0]
@@ -163,528 +139,477 @@ Creating decoders for process `$paramod$dfb5d276a71cbecdd4cf6f6b50ac4ba59fbc119d
     71/79: $0\rxf_cnt[2:0]
     72/79: $0\txf_cnt[2:0]
     73/79: $5\i[31:0]
-    74/79: $3$lookahead\irq$619[3:0]$660
+    74/79: $3$lookahead\irq$73[3:0]$114
     75/79: $0\x[31:0]
     76/79: $0\isr[31:0]
     77/79: $0\osr[31:0]
     78/79: $0\pc[4:0]
     79/79: $0\y[31:0]
-Creating decoders for process `$paramod$dfb5d276a71cbecdd4cf6f6b50ac4ba59fbc119d\pio_engine.$proc$pio_engine.v:111$577'.
+Creating decoders for process `\pio_engine.$proc$pio_engine.v:111$31'.
      1/2: $0\pin_s1[7:0]
      2/2: $0\pin_s0[7:0]
-Creating decoders for process `$paramod$dfb5d276a71cbecdd4cf6f6b50ac4ba59fbc119d\pio_engine.$proc$pio_engine.v:92$571'.
+Creating decoders for process `\pio_engine.$proc$pio_engine.v:92$25'.
      1/1: $0\div_cnt[15:0]
-Creating decoders for process `$paramod$dfb5d276a71cbecdd4cf6f6b50ac4ba59fbc119d\pio_engine.$proc$pio_engine.v:71$558'.
-     1/3: $1$memwr$\imem$pio_engine.v:71$557_EN[15:0]$564
-     2/3: $1$memwr$\imem$pio_engine.v:71$557_DATA[15:0]$563
-     3/3: $1$memwr$\imem$pio_engine.v:71$557_ADDR[4:0]$562
+Creating decoders for process `\pio_engine.$proc$pio_engine.v:71$12'.
+     1/3: $1$memwr$\imem$pio_engine.v:71$11_EN[15:0]$18
+     2/3: $1$memwr$\imem$pio_engine.v:71$11_DATA[15:0]$17
+     3/3: $1$memwr$\imem$pio_engine.v:71$11_ADDR[4:0]$16
 
-3.2.8. Executing PROC_DLATCH pass (convert process syncs to latches).
+2.2.8. Executing PROC_DLATCH pass (convert process syncs to latches).
 
-3.2.9. Executing PROC_DFF pass (convert process syncs to FFs).
-Creating register for signal `\engine_formal.\boot' using process `\engine_formal.$proc$engine_formal.v:21$545'.
-  created $dff cell `$procdff$2311' with positive edge clock.
-Creating register for signal `$paramod$dfb5d276a71cbecdd4cf6f6b50ac4ba59fbc119d\pio_engine.\i' using process `$paramod$dfb5d276a71cbecdd4cf6f6b50ac4ba59fbc119d\pio_engine.$proc$pio_engine.v:169$620'.
-  created $dff cell `$procdff$2318' with positive edge clock.
-Creating register for signal `$paramod$dfb5d276a71cbecdd4cf6f6b50ac4ba59fbc119d\pio_engine.\y' using process `$paramod$dfb5d276a71cbecdd4cf6f6b50ac4ba59fbc119d\pio_engine.$proc$pio_engine.v:169$620'.
-  created $adff cell `$procdff$2323' with positive edge clock and positive level reset.
-Creating register for signal `$paramod$dfb5d276a71cbecdd4cf6f6b50ac4ba59fbc119d\pio_engine.\pc' using process `$paramod$dfb5d276a71cbecdd4cf6f6b50ac4ba59fbc119d\pio_engine.$proc$pio_engine.v:169$620'.
-  created $adff cell `$procdff$2328' with positive edge clock and positive level reset.
-Creating register for signal `$paramod$dfb5d276a71cbecdd4cf6f6b50ac4ba59fbc119d\pio_engine.\osr' using process `$paramod$dfb5d276a71cbecdd4cf6f6b50ac4ba59fbc119d\pio_engine.$proc$pio_engine.v:169$620'.
-  created $adff cell `$procdff$2333' with positive edge clock and positive level reset.
-Creating register for signal `$paramod$dfb5d276a71cbecdd4cf6f6b50ac4ba59fbc119d\pio_engine.\isr' using process `$paramod$dfb5d276a71cbecdd4cf6f6b50ac4ba59fbc119d\pio_engine.$proc$pio_engine.v:169$620'.
-  created $adff cell `$procdff$2338' with positive edge clock and positive level reset.
-Creating register for signal `$paramod$dfb5d276a71cbecdd4cf6f6b50ac4ba59fbc119d\pio_engine.\x' using process `$paramod$dfb5d276a71cbecdd4cf6f6b50ac4ba59fbc119d\pio_engine.$proc$pio_engine.v:169$620'.
-  created $adff cell `$procdff$2343' with positive edge clock and positive level reset.
-Creating register for signal `$paramod$dfb5d276a71cbecdd4cf6f6b50ac4ba59fbc119d\pio_engine.\pins' using process `$paramod$dfb5d276a71cbecdd4cf6f6b50ac4ba59fbc119d\pio_engine.$proc$pio_engine.v:169$620'.
-  created $adff cell `$procdff$2348' with positive edge clock and positive level reset.
-Creating register for signal `$paramod$dfb5d276a71cbecdd4cf6f6b50ac4ba59fbc119d\pio_engine.\pindirs' using process `$paramod$dfb5d276a71cbecdd4cf6f6b50ac4ba59fbc119d\pio_engine.$proc$pio_engine.v:169$620'.
-  created $adff cell `$procdff$2353' with positive edge clock and positive level reset.
-Creating register for signal `$paramod$dfb5d276a71cbecdd4cf6f6b50ac4ba59fbc119d\pio_engine.\irq' using process `$paramod$dfb5d276a71cbecdd4cf6f6b50ac4ba59fbc119d\pio_engine.$proc$pio_engine.v:169$620'.
-  created $adff cell `$procdff$2358' with positive edge clock and positive level reset.
-Creating register for signal `$paramod$dfb5d276a71cbecdd4cf6f6b50ac4ba59fbc119d\pio_engine.\txf_cnt' using process `$paramod$dfb5d276a71cbecdd4cf6f6b50ac4ba59fbc119d\pio_engine.$proc$pio_engine.v:169$620'.
-  created $adff cell `$procdff$2363' with positive edge clock and positive level reset.
-Creating register for signal `$paramod$dfb5d276a71cbecdd4cf6f6b50ac4ba59fbc119d\pio_engine.\rxf_cnt' using process `$paramod$dfb5d276a71cbecdd4cf6f6b50ac4ba59fbc119d\pio_engine.$proc$pio_engine.v:169$620'.
-  created $adff cell `$procdff$2368' with positive edge clock and positive level reset.
-Creating register for signal `$paramod$dfb5d276a71cbecdd4cf6f6b50ac4ba59fbc119d\pio_engine.\delay_cnt' using process `$paramod$dfb5d276a71cbecdd4cf6f6b50ac4ba59fbc119d\pio_engine.$proc$pio_engine.v:169$620'.
-  created $adff cell `$procdff$2373' with positive edge clock and positive level reset.
-Creating register for signal `$paramod$dfb5d276a71cbecdd4cf6f6b50ac4ba59fbc119d\pio_engine.\txf[0]' using process `$paramod$dfb5d276a71cbecdd4cf6f6b50ac4ba59fbc119d\pio_engine.$proc$pio_engine.v:169$620'.
-  created $dff cell `$procdff$2380' with positive edge clock.
-Creating register for signal `$paramod$dfb5d276a71cbecdd4cf6f6b50ac4ba59fbc119d\pio_engine.\txf[1]' using process `$paramod$dfb5d276a71cbecdd4cf6f6b50ac4ba59fbc119d\pio_engine.$proc$pio_engine.v:169$620'.
-  created $dff cell `$procdff$2387' with positive edge clock.
-Creating register for signal `$paramod$dfb5d276a71cbecdd4cf6f6b50ac4ba59fbc119d\pio_engine.\txf[2]' using process `$paramod$dfb5d276a71cbecdd4cf6f6b50ac4ba59fbc119d\pio_engine.$proc$pio_engine.v:169$620'.
-  created $dff cell `$procdff$2394' with positive edge clock.
-Creating register for signal `$paramod$dfb5d276a71cbecdd4cf6f6b50ac4ba59fbc119d\pio_engine.\txf[3]' using process `$paramod$dfb5d276a71cbecdd4cf6f6b50ac4ba59fbc119d\pio_engine.$proc$pio_engine.v:169$620'.
-  created $dff cell `$procdff$2401' with positive edge clock.
-Creating register for signal `$paramod$dfb5d276a71cbecdd4cf6f6b50ac4ba59fbc119d\pio_engine.\rxf[0]' using process `$paramod$dfb5d276a71cbecdd4cf6f6b50ac4ba59fbc119d\pio_engine.$proc$pio_engine.v:169$620'.
-  created $dff cell `$procdff$2408' with positive edge clock.
-Creating register for signal `$paramod$dfb5d276a71cbecdd4cf6f6b50ac4ba59fbc119d\pio_engine.\rxf[1]' using process `$paramod$dfb5d276a71cbecdd4cf6f6b50ac4ba59fbc119d\pio_engine.$proc$pio_engine.v:169$620'.
-  created $dff cell `$procdff$2415' with positive edge clock.
-Creating register for signal `$paramod$dfb5d276a71cbecdd4cf6f6b50ac4ba59fbc119d\pio_engine.\rxf[2]' using process `$paramod$dfb5d276a71cbecdd4cf6f6b50ac4ba59fbc119d\pio_engine.$proc$pio_engine.v:169$620'.
-  created $dff cell `$procdff$2422' with positive edge clock.
-Creating register for signal `$paramod$dfb5d276a71cbecdd4cf6f6b50ac4ba59fbc119d\pio_engine.\rxf[3]' using process `$paramod$dfb5d276a71cbecdd4cf6f6b50ac4ba59fbc119d\pio_engine.$proc$pio_engine.v:169$620'.
-  created $dff cell `$procdff$2429' with positive edge clock.
-Creating register for signal `$paramod$dfb5d276a71cbecdd4cf6f6b50ac4ba59fbc119d\pio_engine.$bitselwrite$pos$pio_engine.v:282$553' using process `$paramod$dfb5d276a71cbecdd4cf6f6b50ac4ba59fbc119d\pio_engine.$proc$pio_engine.v:169$620'.
-  created $adff cell `$procdff$2434' with positive edge clock and positive level reset.
-Creating register for signal `$paramod$dfb5d276a71cbecdd4cf6f6b50ac4ba59fbc119d\pio_engine.$bitselwrite$pos$pio_engine.v:283$554' using process `$paramod$dfb5d276a71cbecdd4cf6f6b50ac4ba59fbc119d\pio_engine.$proc$pio_engine.v:169$620'.
-  created $adff cell `$procdff$2439' with positive edge clock and positive level reset.
-Creating register for signal `$paramod$dfb5d276a71cbecdd4cf6f6b50ac4ba59fbc119d\pio_engine.$mem2reg_wr$\txf$pio_engine.v:176$555_ADDR' using process `$paramod$dfb5d276a71cbecdd4cf6f6b50ac4ba59fbc119d\pio_engine.$proc$pio_engine.v:169$620'.
-  created $adff cell `$procdff$2444' with positive edge clock and positive level reset.
-Creating register for signal `$paramod$dfb5d276a71cbecdd4cf6f6b50ac4ba59fbc119d\pio_engine.$mem2reg_wr$\txf$pio_engine.v:176$555_DATA' using process `$paramod$dfb5d276a71cbecdd4cf6f6b50ac4ba59fbc119d\pio_engine.$proc$pio_engine.v:169$620'.
-  created $adff cell `$procdff$2449' with positive edge clock and positive level reset.
-Creating register for signal `$paramod$dfb5d276a71cbecdd4cf6f6b50ac4ba59fbc119d\pio_engine.$mem2reg_wr$\rxf$pio_engine.v:255$556_ADDR' using process `$paramod$dfb5d276a71cbecdd4cf6f6b50ac4ba59fbc119d\pio_engine.$proc$pio_engine.v:169$620'.
-  created $adff cell `$procdff$2454' with positive edge clock and positive level reset.
-Creating register for signal `$paramod$dfb5d276a71cbecdd4cf6f6b50ac4ba59fbc119d\pio_engine.$mem2reg_wr$\rxf$pio_engine.v:255$556_DATA' using process `$paramod$dfb5d276a71cbecdd4cf6f6b50ac4ba59fbc119d\pio_engine.$proc$pio_engine.v:169$620'.
-  created $adff cell `$procdff$2459' with positive edge clock and positive level reset.
-Creating register for signal `$paramod$dfb5d276a71cbecdd4cf6f6b50ac4ba59fbc119d\pio_engine.$lookahead\irq$619' using process `$paramod$dfb5d276a71cbecdd4cf6f6b50ac4ba59fbc119d\pio_engine.$proc$pio_engine.v:169$620'.
-  created $adff cell `$procdff$2464' with positive edge clock and positive level reset.
-Creating register for signal `$paramod$dfb5d276a71cbecdd4cf6f6b50ac4ba59fbc119d\pio_engine.\pin_s0' using process `$paramod$dfb5d276a71cbecdd4cf6f6b50ac4ba59fbc119d\pio_engine.$proc$pio_engine.v:111$577'.
-  created $adff cell `$procdff$2469' with positive edge clock and positive level reset.
-Creating register for signal `$paramod$dfb5d276a71cbecdd4cf6f6b50ac4ba59fbc119d\pio_engine.\pin_s1' using process `$paramod$dfb5d276a71cbecdd4cf6f6b50ac4ba59fbc119d\pio_engine.$proc$pio_engine.v:111$577'.
-  created $adff cell `$procdff$2474' with positive edge clock and positive level reset.
-Creating register for signal `$paramod$dfb5d276a71cbecdd4cf6f6b50ac4ba59fbc119d\pio_engine.\div_cnt' using process `$paramod$dfb5d276a71cbecdd4cf6f6b50ac4ba59fbc119d\pio_engine.$proc$pio_engine.v:92$571'.
-  created $adff cell `$procdff$2479' with positive edge clock and positive level reset.
-Creating register for signal `$paramod$dfb5d276a71cbecdd4cf6f6b50ac4ba59fbc119d\pio_engine.$memwr$\imem$pio_engine.v:71$557_ADDR' using process `$paramod$dfb5d276a71cbecdd4cf6f6b50ac4ba59fbc119d\pio_engine.$proc$pio_engine.v:71$558'.
-  created $dff cell `$procdff$2480' with positive edge clock.
-Creating register for signal `$paramod$dfb5d276a71cbecdd4cf6f6b50ac4ba59fbc119d\pio_engine.$memwr$\imem$pio_engine.v:71$557_DATA' using process `$paramod$dfb5d276a71cbecdd4cf6f6b50ac4ba59fbc119d\pio_engine.$proc$pio_engine.v:71$558'.
-  created $dff cell `$procdff$2481' with positive edge clock.
-Creating register for signal `$paramod$dfb5d276a71cbecdd4cf6f6b50ac4ba59fbc119d\pio_engine.$memwr$\imem$pio_engine.v:71$557_EN' using process `$paramod$dfb5d276a71cbecdd4cf6f6b50ac4ba59fbc119d\pio_engine.$proc$pio_engine.v:71$558'.
-  created $dff cell `$procdff$2482' with positive edge clock.
+2.2.9. Executing PROC_DFF pass (convert process syncs to FFs).
+Creating register for signal `\pio_engine.\f_boot' using process `\pio_engine.$proc$pio_engine.v:305$545'.
+  created $dff cell `$procdff$1778' with positive edge clock.
+Creating register for signal `\pio_engine.\i' using process `\pio_engine.$proc$pio_engine.v:169$74'.
+  created $dff cell `$procdff$1785' with positive edge clock.
+Creating register for signal `\pio_engine.\y' using process `\pio_engine.$proc$pio_engine.v:169$74'.
+  created $adff cell `$procdff$1790' with positive edge clock and positive level reset.
+Creating register for signal `\pio_engine.\pc' using process `\pio_engine.$proc$pio_engine.v:169$74'.
+  created $adff cell `$procdff$1795' with positive edge clock and positive level reset.
+Creating register for signal `\pio_engine.\osr' using process `\pio_engine.$proc$pio_engine.v:169$74'.
+  created $adff cell `$procdff$1800' with positive edge clock and positive level reset.
+Creating register for signal `\pio_engine.\isr' using process `\pio_engine.$proc$pio_engine.v:169$74'.
+  created $adff cell `$procdff$1805' with positive edge clock and positive level reset.
+Creating register for signal `\pio_engine.\x' using process `\pio_engine.$proc$pio_engine.v:169$74'.
+  created $adff cell `$procdff$1810' with positive edge clock and positive level reset.
+Creating register for signal `\pio_engine.\pins' using process `\pio_engine.$proc$pio_engine.v:169$74'.
+  created $adff cell `$procdff$1815' with positive edge clock and positive level reset.
+Creating register for signal `\pio_engine.\pindirs' using process `\pio_engine.$proc$pio_engine.v:169$74'.
+  created $adff cell `$procdff$1820' with positive edge clock and positive level reset.
+Creating register for signal `\pio_engine.\irq' using process `\pio_engine.$proc$pio_engine.v:169$74'.
+  created $adff cell `$procdff$1825' with positive edge clock and positive level reset.
+Creating register for signal `\pio_engine.\txf_cnt' using process `\pio_engine.$proc$pio_engine.v:169$74'.
+  created $adff cell `$procdff$1830' with positive edge clock and positive level reset.
+Creating register for signal `\pio_engine.\rxf_cnt' using process `\pio_engine.$proc$pio_engine.v:169$74'.
+  created $adff cell `$procdff$1835' with positive edge clock and positive level reset.
+Creating register for signal `\pio_engine.\delay_cnt' using process `\pio_engine.$proc$pio_engine.v:169$74'.
+  created $adff cell `$procdff$1840' with positive edge clock and positive level reset.
+Creating register for signal `\pio_engine.$bitselwrite$pos$pio_engine.v:282$7' using process `\pio_engine.$proc$pio_engine.v:169$74'.
+  created $adff cell `$procdff$1845' with positive edge clock and positive level reset.
+Creating register for signal `\pio_engine.$bitselwrite$pos$pio_engine.v:283$8' using process `\pio_engine.$proc$pio_engine.v:169$74'.
+  created $adff cell `$procdff$1850' with positive edge clock and positive level reset.
+Creating register for signal `\pio_engine.\txf[0]' using process `\pio_engine.$proc$pio_engine.v:169$74'.
+  created $dff cell `$procdff$1857' with positive edge clock.
+Creating register for signal `\pio_engine.\txf[1]' using process `\pio_engine.$proc$pio_engine.v:169$74'.
+  created $dff cell `$procdff$1864' with positive edge clock.
+Creating register for signal `\pio_engine.\txf[2]' using process `\pio_engine.$proc$pio_engine.v:169$74'.
+  created $dff cell `$procdff$1871' with positive edge clock.
+Creating register for signal `\pio_engine.\txf[3]' using process `\pio_engine.$proc$pio_engine.v:169$74'.
+  created $dff cell `$procdff$1878' with positive edge clock.
+Creating register for signal `\pio_engine.\rxf[0]' using process `\pio_engine.$proc$pio_engine.v:169$74'.
+  created $dff cell `$procdff$1885' with positive edge clock.
+Creating register for signal `\pio_engine.\rxf[1]' using process `\pio_engine.$proc$pio_engine.v:169$74'.
+  created $dff cell `$procdff$1892' with positive edge clock.
+Creating register for signal `\pio_engine.\rxf[2]' using process `\pio_engine.$proc$pio_engine.v:169$74'.
+  created $dff cell `$procdff$1899' with positive edge clock.
+Creating register for signal `\pio_engine.\rxf[3]' using process `\pio_engine.$proc$pio_engine.v:169$74'.
+  created $dff cell `$procdff$1906' with positive edge clock.
+Creating register for signal `\pio_engine.$mem2reg_wr$\txf$pio_engine.v:176$9_ADDR' using process `\pio_engine.$proc$pio_engine.v:169$74'.
+  created $adff cell `$procdff$1911' with positive edge clock and positive level reset.
+Creating register for signal `\pio_engine.$mem2reg_wr$\txf$pio_engine.v:176$9_DATA' using process `\pio_engine.$proc$pio_engine.v:169$74'.
+  created $adff cell `$procdff$1916' with positive edge clock and positive level reset.
+Creating register for signal `\pio_engine.$mem2reg_wr$\rxf$pio_engine.v:255$10_ADDR' using process `\pio_engine.$proc$pio_engine.v:169$74'.
+  created $adff cell `$procdff$1921' with positive edge clock and positive level reset.
+Creating register for signal `\pio_engine.$mem2reg_wr$\rxf$pio_engine.v:255$10_DATA' using process `\pio_engine.$proc$pio_engine.v:169$74'.
+  created $adff cell `$procdff$1926' with positive edge clock and positive level reset.
+Creating register for signal `\pio_engine.$lookahead\irq$73' using process `\pio_engine.$proc$pio_engine.v:169$74'.
+  created $adff cell `$procdff$1931' with positive edge clock and positive level reset.
+Creating register for signal `\pio_engine.\pin_s0' using process `\pio_engine.$proc$pio_engine.v:111$31'.
+  created $adff cell `$procdff$1936' with positive edge clock and positive level reset.
+Creating register for signal `\pio_engine.\pin_s1' using process `\pio_engine.$proc$pio_engine.v:111$31'.
+  created $adff cell `$procdff$1941' with positive edge clock and positive level reset.
+Creating register for signal `\pio_engine.\div_cnt' using process `\pio_engine.$proc$pio_engine.v:92$25'.
+  created $adff cell `$procdff$1946' with positive edge clock and positive level reset.
+Creating register for signal `\pio_engine.$memwr$\imem$pio_engine.v:71$11_ADDR' using process `\pio_engine.$proc$pio_engine.v:71$12'.
+  created $dff cell `$procdff$1947' with positive edge clock.
+Creating register for signal `\pio_engine.$memwr$\imem$pio_engine.v:71$11_DATA' using process `\pio_engine.$proc$pio_engine.v:71$12'.
+  created $dff cell `$procdff$1948' with positive edge clock.
+Creating register for signal `\pio_engine.$memwr$\imem$pio_engine.v:71$11_EN' using process `\pio_engine.$proc$pio_engine.v:71$12'.
+  created $dff cell `$procdff$1949' with positive edge clock.
 
-3.2.10. Executing PROC_MEMWR pass (convert process memory writes to cells).
+2.2.10. Executing PROC_MEMWR pass (convert process memory writes to cells).
 
-3.2.11. Executing PROC_CLEAN pass (remove empty switches from decision trees).
-Removing empty process `engine_formal.$proc$engine_formal.v:20$552'.
-Found and cleaned up 1 empty switch in `\engine_formal.$proc$engine_formal.v:40$549'.
-Removing empty process `engine_formal.$proc$engine_formal.v:40$549'.
-Found and cleaned up 1 empty switch in `\engine_formal.$proc$engine_formal.v:21$545'.
-Removing empty process `engine_formal.$proc$engine_formal.v:21$545'.
-Found and cleaned up 64 empty switches in `$paramod$dfb5d276a71cbecdd4cf6f6b50ac4ba59fbc119d\pio_engine.$proc$pio_engine.v:169$620'.
-Removing empty process `$paramod$dfb5d276a71cbecdd4cf6f6b50ac4ba59fbc119d\pio_engine.$proc$pio_engine.v:169$620'.
-Removing empty process `$paramod$dfb5d276a71cbecdd4cf6f6b50ac4ba59fbc119d\pio_engine.$proc$pio_engine.v:111$577'.
-Found and cleaned up 2 empty switches in `$paramod$dfb5d276a71cbecdd4cf6f6b50ac4ba59fbc119d\pio_engine.$proc$pio_engine.v:92$571'.
-Removing empty process `$paramod$dfb5d276a71cbecdd4cf6f6b50ac4ba59fbc119d\pio_engine.$proc$pio_engine.v:92$571'.
-Found and cleaned up 1 empty switch in `$paramod$dfb5d276a71cbecdd4cf6f6b50ac4ba59fbc119d\pio_engine.$proc$pio_engine.v:71$558'.
-Removing empty process `$paramod$dfb5d276a71cbecdd4cf6f6b50ac4ba59fbc119d\pio_engine.$proc$pio_engine.v:71$558'.
+2.2.11. Executing PROC_CLEAN pass (remove empty switches from decision trees).
+Removing empty process `pio_engine.$proc$pio_engine.v:304$557'.
+Removing empty process `pio_engine.$proc$pio_engine.v:303$554'.
+Found and cleaned up 1 empty switch in `\pio_engine.$proc$pio_engine.v:306$548'.
+Removing empty process `pio_engine.$proc$pio_engine.v:306$548'.
+Found and cleaned up 1 empty switch in `\pio_engine.$proc$pio_engine.v:305$545'.
+Removing empty process `pio_engine.$proc$pio_engine.v:305$545'.
+Found and cleaned up 64 empty switches in `\pio_engine.$proc$pio_engine.v:169$74'.
+Removing empty process `pio_engine.$proc$pio_engine.v:169$74'.
+Removing empty process `pio_engine.$proc$pio_engine.v:111$31'.
+Found and cleaned up 2 empty switches in `\pio_engine.$proc$pio_engine.v:92$25'.
+Removing empty process `pio_engine.$proc$pio_engine.v:92$25'.
+Found and cleaned up 1 empty switch in `\pio_engine.$proc$pio_engine.v:71$12'.
+Removing empty process `pio_engine.$proc$pio_engine.v:71$12'.
 Cleaned up 69 empty switches.
 
-3.2.12. Executing OPT_EXPR pass (perform const folding).
-Optimizing module engine_formal.
-Optimizing module $paramod$dfb5d276a71cbecdd4cf6f6b50ac4ba59fbc119d\pio_engine.
+2.2.12. Executing OPT_EXPR pass (perform const folding).
+Optimizing module pio_engine.
 <suppressed ~107 debug messages>
 
-3.3. Executing FUTURE pass.
+2.3. Executing FUTURE pass.
 
-3.4. Executing OPT_EXPR pass (perform const folding).
-Optimizing module engine_formal.
-Optimizing module $paramod$dfb5d276a71cbecdd4cf6f6b50ac4ba59fbc119d\pio_engine.
+2.4. Executing OPT_EXPR pass (perform const folding).
+Optimizing module pio_engine.
 
-3.5. Executing CHECK pass (checking for obvious problems).
-Checking module engine_formal...
-Warning: Wire engine_formal.\dut.txf_cnt is used but has no driver.
-Warning: Wire engine_formal.\dut.rxf_cnt is used but has no driver.
-Checking module $paramod$dfb5d276a71cbecdd4cf6f6b50ac4ba59fbc119d\pio_engine...
-Found and reported 2 problems.
+2.5. Executing CHECK pass (checking for obvious problems).
+Checking module pio_engine...
+Found and reported 0 problems.
 
-3.6. Executing OPT_CLEAN pass (remove unused cells and wires).
-Finding unused cells or wires in module \engine_formal..
-Finding unused cells or wires in module $paramod$dfb5d276a71cbecdd4cf6f6b50ac4ba59fbc119d\pio_engine..
-Removed 214 unused cells and 611 unused wires.
-<suppressed ~228 debug messages>
+2.6. Executing OPT_CLEAN pass (remove unused cells and wires).
+Finding unused cells or wires in module \pio_engine..
+Removed 213 unused cells and 603 unused wires.
+<suppressed ~218 debug messages>
 
-3.7. Executing OPT pass (performing simple optimizations).
+2.7. Executing OPT pass (performing simple optimizations).
 
-3.7.1. Executing OPT_EXPR pass (perform const folding).
-Optimizing module engine_formal.
-Optimizing module $paramod$dfb5d276a71cbecdd4cf6f6b50ac4ba59fbc119d\pio_engine.
+2.7.1. Executing OPT_EXPR pass (perform const folding).
+Optimizing module pio_engine.
 
-3.7.2. Executing OPT_MERGE pass (detect identical cells).
-Finding identical cells in module `\engine_formal'.
-Computing hashes of 11 cells of `\engine_formal'.
-Finding duplicate cells in `\engine_formal'.
-Finding identical cells in module `$paramod$dfb5d276a71cbecdd4cf6f6b50ac4ba59fbc119d\pio_engine'.
-Computing hashes of 862 cells of `$paramod$dfb5d276a71cbecdd4cf6f6b50ac4ba59fbc119d\pio_engine'.
-Finding duplicate cells in `$paramod$dfb5d276a71cbecdd4cf6f6b50ac4ba59fbc119d\pio_engine'.
-Computing hashes of 641 cells of `$paramod$dfb5d276a71cbecdd4cf6f6b50ac4ba59fbc119d\pio_engine'.
-Finding duplicate cells in `$paramod$dfb5d276a71cbecdd4cf6f6b50ac4ba59fbc119d\pio_engine'.
-Computing hashes of 591 cells of `$paramod$dfb5d276a71cbecdd4cf6f6b50ac4ba59fbc119d\pio_engine'.
-Finding duplicate cells in `$paramod$dfb5d276a71cbecdd4cf6f6b50ac4ba59fbc119d\pio_engine'.
-Computing hashes of 566 cells of `$paramod$dfb5d276a71cbecdd4cf6f6b50ac4ba59fbc119d\pio_engine'.
-Finding duplicate cells in `$paramod$dfb5d276a71cbecdd4cf6f6b50ac4ba59fbc119d\pio_engine'.
-Computing hashes of 557 cells of `$paramod$dfb5d276a71cbecdd4cf6f6b50ac4ba59fbc119d\pio_engine'.
-Finding duplicate cells in `$paramod$dfb5d276a71cbecdd4cf6f6b50ac4ba59fbc119d\pio_engine'.
+2.7.2. Executing OPT_MERGE pass (detect identical cells).
+Finding identical cells in module `\pio_engine'.
+Computing hashes of 875 cells of `\pio_engine'.
+Finding duplicate cells in `\pio_engine'.
+Computing hashes of 654 cells of `\pio_engine'.
+Finding duplicate cells in `\pio_engine'.
+Computing hashes of 604 cells of `\pio_engine'.
+Finding duplicate cells in `\pio_engine'.
+Computing hashes of 579 cells of `\pio_engine'.
+Finding duplicate cells in `\pio_engine'.
+Computing hashes of 570 cells of `\pio_engine'.
+Finding duplicate cells in `\pio_engine'.
 <suppressed ~915 debug messages>
 Removed a total of 305 cells.
 
-3.7.3. Executing OPT_MUXTREE pass (detect dead branches in mux trees).
-Running muxtree optimizer on module \engine_formal..
+2.7.3. Executing OPT_MUXTREE pass (detect dead branches in mux trees).
+Running muxtree optimizer on module \pio_engine..
   Creating internal representation of mux trees.
   Evaluating internal representation of mux trees.
   Analyzing evaluation results.
-Running muxtree optimizer on module $paramod$dfb5d276a71cbecdd4cf6f6b50ac4ba59fbc119d\pio_engine..
-  Creating internal representation of mux trees.
-  Evaluating internal representation of mux trees.
-  Analyzing evaluation results.
-    dead port 2/2 on $mux $procmux$1286.
-    dead port 1/2 on $mux $procmux$1284.
-    dead port 2/2 on $mux $procmux$1281.
-    dead port 2/2 on $mux $procmux$1272.
-    dead port 1/2 on $mux $procmux$1270.
-    dead port 2/2 on $mux $procmux$1267.
-    dead port 2/2 on $mux $procmux$1265.
-    dead port 2/2 on $mux $procmux$1238.
-    dead port 1/2 on $mux $procmux$1236.
-    dead port 2/2 on $mux $procmux$1233.
-    dead port 2/2 on $mux $procmux$1231.
-    dead port 1/2 on $mux $procmux$1229.
-    dead port 2/2 on $mux $procmux$1219.
-    dead port 1/2 on $mux $procmux$1217.
-    dead port 2/2 on $mux $procmux$1214.
-    dead port 1/2 on $mux $procmux$1212.
-    dead port 2/2 on $mux $procmux$1185.
-    dead port 1/2 on $mux $procmux$1183.
-    dead port 2/2 on $mux $procmux$1148.
-    dead port 1/2 on $mux $procmux$1146.
-    dead port 2/2 on $mux $procmux$1143.
-    dead port 2/2 on $mux $procmux$1109.
-    dead port 1/2 on $mux $procmux$1107.
-    dead port 2/2 on $mux $procmux$1104.
-    dead port 1/2 on $mux $procmux$1102.
-    dead port 2/2 on $mux $procmux$2165.
-    dead port 2/2 on $mux $procmux$1343.
-    dead port 1/2 on $mux $procmux$1341.
+    dead port 2/2 on $mux $procmux$753.
+    dead port 1/2 on $mux $procmux$751.
+    dead port 2/2 on $mux $procmux$748.
+    dead port 2/2 on $mux $procmux$739.
+    dead port 1/2 on $mux $procmux$737.
+    dead port 2/2 on $mux $procmux$734.
+    dead port 2/2 on $mux $procmux$732.
+    dead port 2/2 on $mux $procmux$705.
+    dead port 1/2 on $mux $procmux$703.
+    dead port 2/2 on $mux $procmux$700.
+    dead port 2/2 on $mux $procmux$698.
+    dead port 1/2 on $mux $procmux$696.
+    dead port 2/2 on $mux $procmux$686.
+    dead port 1/2 on $mux $procmux$684.
+    dead port 2/2 on $mux $procmux$681.
+    dead port 1/2 on $mux $procmux$679.
+    dead port 2/2 on $mux $procmux$652.
+    dead port 1/2 on $mux $procmux$650.
+    dead port 2/2 on $mux $procmux$615.
+    dead port 1/2 on $mux $procmux$613.
+    dead port 2/2 on $mux $procmux$610.
+    dead port 2/2 on $mux $procmux$576.
+    dead port 1/2 on $mux $procmux$574.
+    dead port 2/2 on $mux $procmux$571.
+    dead port 1/2 on $mux $procmux$569.
+    dead port 2/2 on $mux $procmux$1632.
+    dead port 2/2 on $mux $procmux$810.
+    dead port 1/2 on $mux $procmux$808.
 Removed 28 multiplexer ports.
 <suppressed ~439 debug messages>
 
-3.7.4. Executing OPT_REDUCE pass (consolidate $*mux and $reduce_* inputs).
-  Optimizing cells in module \engine_formal.
-  Optimizing cells in module $paramod$dfb5d276a71cbecdd4cf6f6b50ac4ba59fbc119d\pio_engine.
-    New ctrl vector for $pmux cell $procmux$1173: { $procmux$2234_CMP $auto$opt_reduce.cc:137:opt_pmux$2485 }
-    New ctrl vector for $pmux cell $procmux$1331: { $procmux$2234_CMP $auto$opt_reduce.cc:137:opt_pmux$2487 $procmux$2067_CMP }
-    Consolidated identical input bits for $mux cell $procmux$2303:
-      Old ports: A=16'0000000000000000, B=16'1111111111111111, Y=$0$memwr$\imem$pio_engine.v:71$557_EN[15:0]$561
-      New ports: A=1'0, B=1'1, Y=$0$memwr$\imem$pio_engine.v:71$557_EN[15:0]$561 [0]
-      New connections: $0$memwr$\imem$pio_engine.v:71$557_EN[15:0]$561 [15:1] = { $0$memwr$\imem$pio_engine.v:71$557_EN[15:0]$561 [0] $0$memwr$\imem$pio_engine.v:71$557_EN[15:0]$561 [0] $0$memwr$\imem$pio_engine.v:71$557_EN[15:0]$561 [0] $0$memwr$\imem$pio_engine.v:71$557_EN[15:0]$561 [0] $0$memwr$\imem$pio_engine.v:71$557_EN[15:0]$561 [0] $0$memwr$\imem$pio_engine.v:71$557_EN[15:0]$561 [0] $0$memwr$\imem$pio_engine.v:71$557_EN[15:0]$561 [0] $0$memwr$\imem$pio_engine.v:71$557_EN[15:0]$561 [0] $0$memwr$\imem$pio_engine.v:71$557_EN[15:0]$561 [0] $0$memwr$\imem$pio_engine.v:71$557_EN[15:0]$561 [0] $0$memwr$\imem$pio_engine.v:71$557_EN[15:0]$561 [0] $0$memwr$\imem$pio_engine.v:71$557_EN[15:0]$561 [0] $0$memwr$\imem$pio_engine.v:71$557_EN[15:0]$561 [0] $0$memwr$\imem$pio_engine.v:71$557_EN[15:0]$561 [0] $0$memwr$\imem$pio_engine.v:71$557_EN[15:0]$561 [0] }
-  Optimizing cells in module $paramod$dfb5d276a71cbecdd4cf6f6b50ac4ba59fbc119d\pio_engine.
+2.7.4. Executing OPT_REDUCE pass (consolidate $*mux and $reduce_* inputs).
+  Optimizing cells in module \pio_engine.
+    New ctrl vector for $pmux cell $procmux$640: { $procmux$1701_CMP $auto$opt_reduce.cc:137:opt_pmux$1952 }
+    New ctrl vector for $pmux cell $procmux$798: { $procmux$1701_CMP $auto$opt_reduce.cc:137:opt_pmux$1954 $procmux$1534_CMP }
+    Consolidated identical input bits for $mux cell $procmux$1770:
+      Old ports: A=16'0000000000000000, B=16'1111111111111111, Y=$0$memwr$\imem$pio_engine.v:71$11_EN[15:0]$15
+      New ports: A=1'0, B=1'1, Y=$0$memwr$\imem$pio_engine.v:71$11_EN[15:0]$15 [0]
+      New connections: $0$memwr$\imem$pio_engine.v:71$11_EN[15:0]$15 [15:1] = { $0$memwr$\imem$pio_engine.v:71$11_EN[15:0]$15 [0] $0$memwr$\imem$pio_engine.v:71$11_EN[15:0]$15 [0] $0$memwr$\imem$pio_engine.v:71$11_EN[15:0]$15 [0] $0$memwr$\imem$pio_engine.v:71$11_EN[15:0]$15 [0] $0$memwr$\imem$pio_engine.v:71$11_EN[15:0]$15 [0] $0$memwr$\imem$pio_engine.v:71$11_EN[15:0]$15 [0] $0$memwr$\imem$pio_engine.v:71$11_EN[15:0]$15 [0] $0$memwr$\imem$pio_engine.v:71$11_EN[15:0]$15 [0] $0$memwr$\imem$pio_engine.v:71$11_EN[15:0]$15 [0] $0$memwr$\imem$pio_engine.v:71$11_EN[15:0]$15 [0] $0$memwr$\imem$pio_engine.v:71$11_EN[15:0]$15 [0] $0$memwr$\imem$pio_engine.v:71$11_EN[15:0]$15 [0] $0$memwr$\imem$pio_engine.v:71$11_EN[15:0]$15 [0] $0$memwr$\imem$pio_engine.v:71$11_EN[15:0]$15 [0] $0$memwr$\imem$pio_engine.v:71$11_EN[15:0]$15 [0] }
+  Optimizing cells in module \pio_engine.
 Performed a total of 3 changes.
 
-3.7.5. Executing OPT_MERGE pass (detect identical cells).
-Finding identical cells in module `\engine_formal'.
-Computing hashes of 11 cells of `\engine_formal'.
-Finding duplicate cells in `\engine_formal'.
-Computing hashes of 10 cells of `\engine_formal'.
-Finding duplicate cells in `\engine_formal'.
-<suppressed ~3 debug messages>
-Finding identical cells in module `$paramod$dfb5d276a71cbecdd4cf6f6b50ac4ba59fbc119d\pio_engine'.
-Computing hashes of 531 cells of `$paramod$dfb5d276a71cbecdd4cf6f6b50ac4ba59fbc119d\pio_engine'.
-Finding duplicate cells in `$paramod$dfb5d276a71cbecdd4cf6f6b50ac4ba59fbc119d\pio_engine'.
-Computing hashes of 522 cells of `$paramod$dfb5d276a71cbecdd4cf6f6b50ac4ba59fbc119d\pio_engine'.
-Finding duplicate cells in `$paramod$dfb5d276a71cbecdd4cf6f6b50ac4ba59fbc119d\pio_engine'.
-Computing hashes of 521 cells of `$paramod$dfb5d276a71cbecdd4cf6f6b50ac4ba59fbc119d\pio_engine'.
-Finding duplicate cells in `$paramod$dfb5d276a71cbecdd4cf6f6b50ac4ba59fbc119d\pio_engine'.
-<suppressed ~30 debug messages>
+2.7.5. Executing OPT_MERGE pass (detect identical cells).
+Finding identical cells in module `\pio_engine'.
+Computing hashes of 544 cells of `\pio_engine'.
+Finding duplicate cells in `\pio_engine'.
+Computing hashes of 534 cells of `\pio_engine'.
+Finding duplicate cells in `\pio_engine'.
+Computing hashes of 533 cells of `\pio_engine'.
+Finding duplicate cells in `\pio_engine'.
+<suppressed ~33 debug messages>
 Removed a total of 11 cells.
 
-3.7.6. Executing OPT_CLEAN pass (remove unused cells and wires).
-Finding unused cells or wires in module \engine_formal..
-Finding unused cells or wires in module $paramod$dfb5d276a71cbecdd4cf6f6b50ac4ba59fbc119d\pio_engine..
-Removed 0 unused cells and 343 unused wires.
+2.7.6. Executing OPT_CLEAN pass (remove unused cells and wires).
+Finding unused cells or wires in module \pio_engine..
+Removed 0 unused cells and 344 unused wires.
 <suppressed ~1 debug messages>
 
-3.7.7. Executing OPT_EXPR pass (perform const folding).
-Optimizing module engine_formal.
-Optimizing module $paramod$dfb5d276a71cbecdd4cf6f6b50ac4ba59fbc119d\pio_engine.
+2.7.7. Executing OPT_EXPR pass (perform const folding).
+Optimizing module pio_engine.
 
-3.7.8. Rerunning OPT passes. (Maybe there is more to do..)
+2.7.8. Rerunning OPT passes. (Maybe there is more to do..)
 
-3.7.9. Executing OPT_MUXTREE pass (detect dead branches in mux trees).
-Running muxtree optimizer on module \engine_formal..
-  Creating internal representation of mux trees.
-  Evaluating internal representation of mux trees.
-  Analyzing evaluation results.
-Running muxtree optimizer on module $paramod$dfb5d276a71cbecdd4cf6f6b50ac4ba59fbc119d\pio_engine..
+2.7.9. Executing OPT_MUXTREE pass (detect dead branches in mux trees).
+Running muxtree optimizer on module \pio_engine..
   Creating internal representation of mux trees.
   Evaluating internal representation of mux trees.
   Analyzing evaluation results.
 Removed 0 multiplexer ports.
 <suppressed ~414 debug messages>
 
-3.7.10. Executing OPT_REDUCE pass (consolidate $*mux and $reduce_* inputs).
-  Optimizing cells in module \engine_formal.
-  Optimizing cells in module $paramod$dfb5d276a71cbecdd4cf6f6b50ac4ba59fbc119d\pio_engine.
-    New ctrl vector for $pmux cell $procmux$2218: $auto$opt_reduce.cc:137:opt_pmux$2489
-  Optimizing cells in module $paramod$dfb5d276a71cbecdd4cf6f6b50ac4ba59fbc119d\pio_engine.
+2.7.10. Executing OPT_REDUCE pass (consolidate $*mux and $reduce_* inputs).
+  Optimizing cells in module \pio_engine.
+    New ctrl vector for $pmux cell $procmux$1685: $auto$opt_reduce.cc:137:opt_pmux$1956
+  Optimizing cells in module \pio_engine.
 Performed a total of 1 changes.
 
-3.7.11. Executing OPT_MERGE pass (detect identical cells).
-Finding identical cells in module `\engine_formal'.
-Computing hashes of 10 cells of `\engine_formal'.
-Finding duplicate cells in `\engine_formal'.
-Finding identical cells in module `$paramod$dfb5d276a71cbecdd4cf6f6b50ac4ba59fbc119d\pio_engine'.
-Computing hashes of 522 cells of `$paramod$dfb5d276a71cbecdd4cf6f6b50ac4ba59fbc119d\pio_engine'.
-Finding duplicate cells in `$paramod$dfb5d276a71cbecdd4cf6f6b50ac4ba59fbc119d\pio_engine'.
+2.7.11. Executing OPT_MERGE pass (detect identical cells).
+Finding identical cells in module `\pio_engine'.
+Computing hashes of 534 cells of `\pio_engine'.
+Finding duplicate cells in `\pio_engine'.
 Removed a total of 0 cells.
 
-3.7.12. Executing OPT_CLEAN pass (remove unused cells and wires).
-Finding unused cells or wires in module \engine_formal..
-Finding unused cells or wires in module $paramod$dfb5d276a71cbecdd4cf6f6b50ac4ba59fbc119d\pio_engine..
+2.7.12. Executing OPT_CLEAN pass (remove unused cells and wires).
+Finding unused cells or wires in module \pio_engine..
 
-3.7.13. Executing OPT_EXPR pass (perform const folding).
-Optimizing module engine_formal.
-Optimizing module $paramod$dfb5d276a71cbecdd4cf6f6b50ac4ba59fbc119d\pio_engine.
+2.7.13. Executing OPT_EXPR pass (perform const folding).
+Optimizing module pio_engine.
 
-3.7.14. Rerunning OPT passes. (Maybe there is more to do..)
+2.7.14. Rerunning OPT passes. (Maybe there is more to do..)
 
-3.7.15. Executing OPT_MUXTREE pass (detect dead branches in mux trees).
-Running muxtree optimizer on module \engine_formal..
-  Creating internal representation of mux trees.
-  Evaluating internal representation of mux trees.
-  Analyzing evaluation results.
-Running muxtree optimizer on module $paramod$dfb5d276a71cbecdd4cf6f6b50ac4ba59fbc119d\pio_engine..
+2.7.15. Executing OPT_MUXTREE pass (detect dead branches in mux trees).
+Running muxtree optimizer on module \pio_engine..
   Creating internal representation of mux trees.
   Evaluating internal representation of mux trees.
   Analyzing evaluation results.
 Removed 0 multiplexer ports.
 <suppressed ~409 debug messages>
 
-3.7.16. Executing OPT_REDUCE pass (consolidate $*mux and $reduce_* inputs).
-  Optimizing cells in module \engine_formal.
-  Optimizing cells in module $paramod$dfb5d276a71cbecdd4cf6f6b50ac4ba59fbc119d\pio_engine.
+2.7.16. Executing OPT_REDUCE pass (consolidate $*mux and $reduce_* inputs).
+  Optimizing cells in module \pio_engine.
 Performed a total of 0 changes.
 
-3.7.17. Executing OPT_MERGE pass (detect identical cells).
-Finding identical cells in module `\engine_formal'.
-Computing hashes of 10 cells of `\engine_formal'.
-Finding duplicate cells in `\engine_formal'.
-Finding identical cells in module `$paramod$dfb5d276a71cbecdd4cf6f6b50ac4ba59fbc119d\pio_engine'.
-Computing hashes of 522 cells of `$paramod$dfb5d276a71cbecdd4cf6f6b50ac4ba59fbc119d\pio_engine'.
-Finding duplicate cells in `$paramod$dfb5d276a71cbecdd4cf6f6b50ac4ba59fbc119d\pio_engine'.
+2.7.17. Executing OPT_MERGE pass (detect identical cells).
+Finding identical cells in module `\pio_engine'.
+Computing hashes of 534 cells of `\pio_engine'.
+Finding duplicate cells in `\pio_engine'.
 Removed a total of 0 cells.
 
-3.7.18. Executing OPT_CLEAN pass (remove unused cells and wires).
-Finding unused cells or wires in module \engine_formal..
-Finding unused cells or wires in module $paramod$dfb5d276a71cbecdd4cf6f6b50ac4ba59fbc119d\pio_engine..
+2.7.18. Executing OPT_CLEAN pass (remove unused cells and wires).
+Finding unused cells or wires in module \pio_engine..
 
-3.7.19. Executing OPT_EXPR pass (perform const folding).
-Optimizing module engine_formal.
-Optimizing module $paramod$dfb5d276a71cbecdd4cf6f6b50ac4ba59fbc119d\pio_engine.
+2.7.19. Executing OPT_EXPR pass (perform const folding).
+Optimizing module pio_engine.
 
-3.7.20. Finished fast OPT passes. (There is nothing left to do.)
+2.7.20. Finished fast OPT passes. (There is nothing left to do.)
 
-3.8. Executing WREDUCE pass (reducing word size of cells).
-Removed top 3 bits (of 4) from port A of cell engine_formal.$le$engine_formal.v:42$550 ($le).
-Removed top 29 bits (of 32) from port B of cell engine_formal.$le$engine_formal.v:42$550 ($le).
-Removed top 3 bits (of 4) from port A of cell engine_formal.$le$engine_formal.v:43$551 ($le).
-Removed top 29 bits (of 32) from port B of cell engine_formal.$le$engine_formal.v:43$551 ($le).
-Removed top 15 bits (of 16) from port B of cell $paramod$dfb5d276a71cbecdd4cf6f6b50ac4ba59fbc119d\pio_engine.$le$pio_engine.v:91$566 ($le).
-Removed top 15 bits (of 16) from port B of cell $paramod$dfb5d276a71cbecdd4cf6f6b50ac4ba59fbc119d\pio_engine.$sub$pio_engine.v:91$567 ($sub).
-Removed top 15 bits (of 16) from port B of cell $paramod$dfb5d276a71cbecdd4cf6f6b50ac4ba59fbc119d\pio_engine.$add$pio_engine.v:96$574 ($add).
-Removed top 2 bits (of 6) from mux cell $paramod$dfb5d276a71cbecdd4cf6f6b50ac4ba59fbc119d\pio_engine.$ternary$pio_engine.v:132$580 ($mux).
-Removed top 2 bits (of 6) from mux cell $paramod$dfb5d276a71cbecdd4cf6f6b50ac4ba59fbc119d\pio_engine.$ternary$pio_engine.v:133$582 ($mux).
-Removed top 2 bits (of 3) from port B of cell $paramod$dfb5d276a71cbecdd4cf6f6b50ac4ba59fbc119d\pio_engine.$eq$pio_engine.v:137$584 ($eq).
-Removed top 1 bits (of 3) from port B of cell $paramod$dfb5d276a71cbecdd4cf6f6b50ac4ba59fbc119d\pio_engine.$eq$pio_engine.v:138$585 ($eq).
-Removed top 1 bits (of 2) from port B of cell $paramod$dfb5d276a71cbecdd4cf6f6b50ac4ba59fbc119d\pio_engine.$eq$pio_engine.v:142$595 ($eq).
-Removed top 1 bits (of 2) from port B of cell $paramod$dfb5d276a71cbecdd4cf6f6b50ac4ba59fbc119d\pio_engine.$eq$pio_engine.v:154$606 ($eq).
-Removed top 2 bits (of 5) from port A of cell $paramod$dfb5d276a71cbecdd4cf6f6b50ac4ba59fbc119d\pio_engine.$sub$pio_engine.v:163$612 ($sub).
-Removed top 2 bits (of 5) from port B of cell $paramod$dfb5d276a71cbecdd4cf6f6b50ac4ba59fbc119d\pio_engine.$sub$pio_engine.v:163$612 ($sub).
-Removed top 1 bits (of 5) from port Y of cell $paramod$dfb5d276a71cbecdd4cf6f6b50ac4ba59fbc119d\pio_engine.$sub$pio_engine.v:163$612 ($sub).
-Removed top 4 bits (of 5) from port A of cell $paramod$dfb5d276a71cbecdd4cf6f6b50ac4ba59fbc119d\pio_engine.$shl$pio_engine.v:165$616 ($shl).
-Removed top 4 bits (of 5) from port B of cell $paramod$dfb5d276a71cbecdd4cf6f6b50ac4ba59fbc119d\pio_engine.$sub$pio_engine.v:165$617 ($sub).
-Removed top 4 bits (of 5) from port B of cell $paramod$dfb5d276a71cbecdd4cf6f6b50ac4ba59fbc119d\pio_engine.$sub$pio_engine.v:182$661 ($sub).
-Removed top 31 bits (of 32) from port A of cell $paramod$dfb5d276a71cbecdd4cf6f6b50ac4ba59fbc119d\pio_engine.$ge$pio_engine.v:188$663 ($ge).
-Removed top 31 bits (of 32) from port A of cell $paramod$dfb5d276a71cbecdd4cf6f6b50ac4ba59fbc119d\pio_engine.$sub$pio_engine.v:189$667 ($sub).
-Removed top 28 bits (of 32) from port Y of cell $paramod$dfb5d276a71cbecdd4cf6f6b50ac4ba59fbc119d\pio_engine.$sub$pio_engine.v:189$667 ($sub).
-Removed top 28 bits (of 32) from port B of cell $paramod$dfb5d276a71cbecdd4cf6f6b50ac4ba59fbc119d\pio_engine.$shiftx$pio_engine.v:189$668 ($shiftx).
-Removed top 31 bits (of 32) from port A of cell $paramod$dfb5d276a71cbecdd4cf6f6b50ac4ba59fbc119d\pio_engine.$ge$pio_engine.v:188$669 ($ge).
-Removed top 31 bits (of 32) from port A of cell $paramod$dfb5d276a71cbecdd4cf6f6b50ac4ba59fbc119d\pio_engine.$sub$pio_engine.v:189$673 ($sub).
-Removed top 28 bits (of 32) from port Y of cell $paramod$dfb5d276a71cbecdd4cf6f6b50ac4ba59fbc119d\pio_engine.$sub$pio_engine.v:189$673 ($sub).
-Removed top 28 bits (of 32) from port B of cell $paramod$dfb5d276a71cbecdd4cf6f6b50ac4ba59fbc119d\pio_engine.$shiftx$pio_engine.v:189$674 ($shiftx).
-Removed top 30 bits (of 32) from port A of cell $paramod$dfb5d276a71cbecdd4cf6f6b50ac4ba59fbc119d\pio_engine.$ge$pio_engine.v:188$675 ($ge).
-Removed top 30 bits (of 32) from port A of cell $paramod$dfb5d276a71cbecdd4cf6f6b50ac4ba59fbc119d\pio_engine.$sub$pio_engine.v:189$679 ($sub).
-Removed top 28 bits (of 32) from port Y of cell $paramod$dfb5d276a71cbecdd4cf6f6b50ac4ba59fbc119d\pio_engine.$sub$pio_engine.v:189$679 ($sub).
-Removed top 28 bits (of 32) from port B of cell $paramod$dfb5d276a71cbecdd4cf6f6b50ac4ba59fbc119d\pio_engine.$shiftx$pio_engine.v:189$680 ($shiftx).
-Removed top 30 bits (of 32) from port A of cell $paramod$dfb5d276a71cbecdd4cf6f6b50ac4ba59fbc119d\pio_engine.$ge$pio_engine.v:188$681 ($ge).
-Removed top 30 bits (of 32) from port A of cell $paramod$dfb5d276a71cbecdd4cf6f6b50ac4ba59fbc119d\pio_engine.$sub$pio_engine.v:189$685 ($sub).
-Removed top 28 bits (of 32) from port Y of cell $paramod$dfb5d276a71cbecdd4cf6f6b50ac4ba59fbc119d\pio_engine.$sub$pio_engine.v:189$685 ($sub).
-Removed top 28 bits (of 32) from port B of cell $paramod$dfb5d276a71cbecdd4cf6f6b50ac4ba59fbc119d\pio_engine.$shiftx$pio_engine.v:189$686 ($shiftx).
-Removed top 29 bits (of 32) from port A of cell $paramod$dfb5d276a71cbecdd4cf6f6b50ac4ba59fbc119d\pio_engine.$ge$pio_engine.v:188$687 ($ge).
-Removed top 29 bits (of 32) from port A of cell $paramod$dfb5d276a71cbecdd4cf6f6b50ac4ba59fbc119d\pio_engine.$sub$pio_engine.v:189$691 ($sub).
-Removed top 28 bits (of 32) from port Y of cell $paramod$dfb5d276a71cbecdd4cf6f6b50ac4ba59fbc119d\pio_engine.$sub$pio_engine.v:189$691 ($sub).
-Removed top 28 bits (of 32) from port B of cell $paramod$dfb5d276a71cbecdd4cf6f6b50ac4ba59fbc119d\pio_engine.$shiftx$pio_engine.v:189$692 ($shiftx).
-Removed top 29 bits (of 32) from port A of cell $paramod$dfb5d276a71cbecdd4cf6f6b50ac4ba59fbc119d\pio_engine.$ge$pio_engine.v:188$693 ($ge).
-Removed top 29 bits (of 32) from port A of cell $paramod$dfb5d276a71cbecdd4cf6f6b50ac4ba59fbc119d\pio_engine.$sub$pio_engine.v:189$697 ($sub).
-Removed top 28 bits (of 32) from port Y of cell $paramod$dfb5d276a71cbecdd4cf6f6b50ac4ba59fbc119d\pio_engine.$sub$pio_engine.v:189$697 ($sub).
-Removed top 28 bits (of 32) from port B of cell $paramod$dfb5d276a71cbecdd4cf6f6b50ac4ba59fbc119d\pio_engine.$shiftx$pio_engine.v:189$698 ($shiftx).
-Removed top 29 bits (of 32) from port A of cell $paramod$dfb5d276a71cbecdd4cf6f6b50ac4ba59fbc119d\pio_engine.$ge$pio_engine.v:188$699 ($ge).
-Removed top 29 bits (of 32) from port A of cell $paramod$dfb5d276a71cbecdd4cf6f6b50ac4ba59fbc119d\pio_engine.$sub$pio_engine.v:189$703 ($sub).
-Removed top 28 bits (of 32) from port Y of cell $paramod$dfb5d276a71cbecdd4cf6f6b50ac4ba59fbc119d\pio_engine.$sub$pio_engine.v:189$703 ($sub).
-Removed top 28 bits (of 32) from port B of cell $paramod$dfb5d276a71cbecdd4cf6f6b50ac4ba59fbc119d\pio_engine.$shiftx$pio_engine.v:189$704 ($shiftx).
-Removed top 29 bits (of 32) from port A of cell $paramod$dfb5d276a71cbecdd4cf6f6b50ac4ba59fbc119d\pio_engine.$ge$pio_engine.v:188$705 ($ge).
-Removed top 29 bits (of 32) from port A of cell $paramod$dfb5d276a71cbecdd4cf6f6b50ac4ba59fbc119d\pio_engine.$sub$pio_engine.v:189$709 ($sub).
-Removed top 28 bits (of 32) from port Y of cell $paramod$dfb5d276a71cbecdd4cf6f6b50ac4ba59fbc119d\pio_engine.$sub$pio_engine.v:189$709 ($sub).
-Removed top 28 bits (of 32) from port B of cell $paramod$dfb5d276a71cbecdd4cf6f6b50ac4ba59fbc119d\pio_engine.$shiftx$pio_engine.v:189$710 ($shiftx).
-Removed top 31 bits (of 32) from port A of cell $paramod$dfb5d276a71cbecdd4cf6f6b50ac4ba59fbc119d\pio_engine.$ge$pio_engine.v:202$788 ($ge).
-Removed top 29 bits (of 32) from port B of cell $paramod$dfb5d276a71cbecdd4cf6f6b50ac4ba59fbc119d\pio_engine.$lt$pio_engine.v:202$793 ($lt).
-Removed top 31 bits (of 32) from port A of cell $paramod$dfb5d276a71cbecdd4cf6f6b50ac4ba59fbc119d\pio_engine.$sub$pio_engine.v:203$795 ($sub).
-Removed top 28 bits (of 32) from port Y of cell $paramod$dfb5d276a71cbecdd4cf6f6b50ac4ba59fbc119d\pio_engine.$sub$pio_engine.v:203$795 ($sub).
-Removed top 28 bits (of 32) from port B of cell $paramod$dfb5d276a71cbecdd4cf6f6b50ac4ba59fbc119d\pio_engine.$shiftx$pio_engine.v:203$796 ($shiftx).
-Removed top 31 bits (of 32) from port A of cell $paramod$dfb5d276a71cbecdd4cf6f6b50ac4ba59fbc119d\pio_engine.$ge$pio_engine.v:202$797 ($ge).
-Removed top 29 bits (of 32) from port B of cell $paramod$dfb5d276a71cbecdd4cf6f6b50ac4ba59fbc119d\pio_engine.$lt$pio_engine.v:202$802 ($lt).
-Removed top 31 bits (of 32) from port A of cell $paramod$dfb5d276a71cbecdd4cf6f6b50ac4ba59fbc119d\pio_engine.$sub$pio_engine.v:203$804 ($sub).
-Removed top 28 bits (of 32) from port Y of cell $paramod$dfb5d276a71cbecdd4cf6f6b50ac4ba59fbc119d\pio_engine.$sub$pio_engine.v:203$804 ($sub).
-Removed top 28 bits (of 32) from port B of cell $paramod$dfb5d276a71cbecdd4cf6f6b50ac4ba59fbc119d\pio_engine.$shiftx$pio_engine.v:203$805 ($shiftx).
-Removed top 30 bits (of 32) from port A of cell $paramod$dfb5d276a71cbecdd4cf6f6b50ac4ba59fbc119d\pio_engine.$ge$pio_engine.v:202$806 ($ge).
-Removed top 29 bits (of 32) from port B of cell $paramod$dfb5d276a71cbecdd4cf6f6b50ac4ba59fbc119d\pio_engine.$lt$pio_engine.v:202$811 ($lt).
-Removed top 30 bits (of 32) from port A of cell $paramod$dfb5d276a71cbecdd4cf6f6b50ac4ba59fbc119d\pio_engine.$sub$pio_engine.v:203$813 ($sub).
-Removed top 28 bits (of 32) from port Y of cell $paramod$dfb5d276a71cbecdd4cf6f6b50ac4ba59fbc119d\pio_engine.$sub$pio_engine.v:203$813 ($sub).
-Removed top 28 bits (of 32) from port B of cell $paramod$dfb5d276a71cbecdd4cf6f6b50ac4ba59fbc119d\pio_engine.$shiftx$pio_engine.v:203$814 ($shiftx).
-Removed top 30 bits (of 32) from port A of cell $paramod$dfb5d276a71cbecdd4cf6f6b50ac4ba59fbc119d\pio_engine.$ge$pio_engine.v:202$815 ($ge).
-Removed top 29 bits (of 32) from port B of cell $paramod$dfb5d276a71cbecdd4cf6f6b50ac4ba59fbc119d\pio_engine.$lt$pio_engine.v:202$820 ($lt).
-Removed top 30 bits (of 32) from port A of cell $paramod$dfb5d276a71cbecdd4cf6f6b50ac4ba59fbc119d\pio_engine.$sub$pio_engine.v:203$822 ($sub).
-Removed top 28 bits (of 32) from port Y of cell $paramod$dfb5d276a71cbecdd4cf6f6b50ac4ba59fbc119d\pio_engine.$sub$pio_engine.v:203$822 ($sub).
-Removed top 28 bits (of 32) from port B of cell $paramod$dfb5d276a71cbecdd4cf6f6b50ac4ba59fbc119d\pio_engine.$shiftx$pio_engine.v:203$823 ($shiftx).
-Removed top 29 bits (of 32) from port A of cell $paramod$dfb5d276a71cbecdd4cf6f6b50ac4ba59fbc119d\pio_engine.$ge$pio_engine.v:202$824 ($ge).
-Removed top 29 bits (of 32) from port B of cell $paramod$dfb5d276a71cbecdd4cf6f6b50ac4ba59fbc119d\pio_engine.$lt$pio_engine.v:202$829 ($lt).
-Removed top 29 bits (of 32) from port A of cell $paramod$dfb5d276a71cbecdd4cf6f6b50ac4ba59fbc119d\pio_engine.$sub$pio_engine.v:203$831 ($sub).
-Removed top 28 bits (of 32) from port Y of cell $paramod$dfb5d276a71cbecdd4cf6f6b50ac4ba59fbc119d\pio_engine.$sub$pio_engine.v:203$831 ($sub).
-Removed top 28 bits (of 32) from port B of cell $paramod$dfb5d276a71cbecdd4cf6f6b50ac4ba59fbc119d\pio_engine.$shiftx$pio_engine.v:203$832 ($shiftx).
-Removed top 29 bits (of 32) from port A of cell $paramod$dfb5d276a71cbecdd4cf6f6b50ac4ba59fbc119d\pio_engine.$ge$pio_engine.v:202$833 ($ge).
-Removed top 29 bits (of 32) from port B of cell $paramod$dfb5d276a71cbecdd4cf6f6b50ac4ba59fbc119d\pio_engine.$lt$pio_engine.v:202$838 ($lt).
-Removed top 29 bits (of 32) from port A of cell $paramod$dfb5d276a71cbecdd4cf6f6b50ac4ba59fbc119d\pio_engine.$sub$pio_engine.v:203$840 ($sub).
-Removed top 28 bits (of 32) from port Y of cell $paramod$dfb5d276a71cbecdd4cf6f6b50ac4ba59fbc119d\pio_engine.$sub$pio_engine.v:203$840 ($sub).
-Removed top 28 bits (of 32) from port B of cell $paramod$dfb5d276a71cbecdd4cf6f6b50ac4ba59fbc119d\pio_engine.$shiftx$pio_engine.v:203$841 ($shiftx).
-Removed top 29 bits (of 32) from port A of cell $paramod$dfb5d276a71cbecdd4cf6f6b50ac4ba59fbc119d\pio_engine.$ge$pio_engine.v:202$842 ($ge).
-Removed top 29 bits (of 32) from port B of cell $paramod$dfb5d276a71cbecdd4cf6f6b50ac4ba59fbc119d\pio_engine.$lt$pio_engine.v:202$847 ($lt).
-Removed top 29 bits (of 32) from port A of cell $paramod$dfb5d276a71cbecdd4cf6f6b50ac4ba59fbc119d\pio_engine.$sub$pio_engine.v:203$849 ($sub).
-Removed top 28 bits (of 32) from port Y of cell $paramod$dfb5d276a71cbecdd4cf6f6b50ac4ba59fbc119d\pio_engine.$sub$pio_engine.v:203$849 ($sub).
-Removed top 28 bits (of 32) from port B of cell $paramod$dfb5d276a71cbecdd4cf6f6b50ac4ba59fbc119d\pio_engine.$shiftx$pio_engine.v:203$850 ($shiftx).
-Removed top 29 bits (of 32) from port A of cell $paramod$dfb5d276a71cbecdd4cf6f6b50ac4ba59fbc119d\pio_engine.$ge$pio_engine.v:202$851 ($ge).
-Removed top 29 bits (of 32) from port B of cell $paramod$dfb5d276a71cbecdd4cf6f6b50ac4ba59fbc119d\pio_engine.$lt$pio_engine.v:202$856 ($lt).
-Removed top 29 bits (of 32) from port A of cell $paramod$dfb5d276a71cbecdd4cf6f6b50ac4ba59fbc119d\pio_engine.$sub$pio_engine.v:203$858 ($sub).
-Removed top 28 bits (of 32) from port Y of cell $paramod$dfb5d276a71cbecdd4cf6f6b50ac4ba59fbc119d\pio_engine.$sub$pio_engine.v:203$858 ($sub).
-Removed top 28 bits (of 32) from port B of cell $paramod$dfb5d276a71cbecdd4cf6f6b50ac4ba59fbc119d\pio_engine.$shiftx$pio_engine.v:203$859 ($shiftx).
-Removed top 31 bits (of 32) from port A of cell $paramod$dfb5d276a71cbecdd4cf6f6b50ac4ba59fbc119d\pio_engine.$ge$pio_engine.v:227$945 ($ge).
-Removed top 27 bits (of 32) from port A of cell $paramod$dfb5d276a71cbecdd4cf6f6b50ac4ba59fbc119d\pio_engine.$sub$pio_engine.v:228$950 ($sub).
-Removed top 31 bits (of 32) from port A of cell $paramod$dfb5d276a71cbecdd4cf6f6b50ac4ba59fbc119d\pio_engine.$sub$pio_engine.v:228$952 ($sub).
-Removed top 28 bits (of 32) from port Y of cell $paramod$dfb5d276a71cbecdd4cf6f6b50ac4ba59fbc119d\pio_engine.$sub$pio_engine.v:228$952 ($sub).
-Removed top 28 bits (of 32) from port B of cell $paramod$dfb5d276a71cbecdd4cf6f6b50ac4ba59fbc119d\pio_engine.$shiftx$pio_engine.v:228$953 ($shiftx).
-Removed top 31 bits (of 32) from port A of cell $paramod$dfb5d276a71cbecdd4cf6f6b50ac4ba59fbc119d\pio_engine.$ge$pio_engine.v:227$955 ($ge).
-Removed top 27 bits (of 32) from port A of cell $paramod$dfb5d276a71cbecdd4cf6f6b50ac4ba59fbc119d\pio_engine.$sub$pio_engine.v:228$960 ($sub).
-Removed top 31 bits (of 32) from port A of cell $paramod$dfb5d276a71cbecdd4cf6f6b50ac4ba59fbc119d\pio_engine.$sub$pio_engine.v:228$962 ($sub).
-Removed top 28 bits (of 32) from port Y of cell $paramod$dfb5d276a71cbecdd4cf6f6b50ac4ba59fbc119d\pio_engine.$sub$pio_engine.v:228$962 ($sub).
-Removed top 28 bits (of 32) from port B of cell $paramod$dfb5d276a71cbecdd4cf6f6b50ac4ba59fbc119d\pio_engine.$shiftx$pio_engine.v:228$963 ($shiftx).
-Removed top 30 bits (of 32) from port A of cell $paramod$dfb5d276a71cbecdd4cf6f6b50ac4ba59fbc119d\pio_engine.$ge$pio_engine.v:227$965 ($ge).
-Removed top 27 bits (of 32) from port A of cell $paramod$dfb5d276a71cbecdd4cf6f6b50ac4ba59fbc119d\pio_engine.$sub$pio_engine.v:228$970 ($sub).
-Removed top 30 bits (of 32) from port A of cell $paramod$dfb5d276a71cbecdd4cf6f6b50ac4ba59fbc119d\pio_engine.$sub$pio_engine.v:228$972 ($sub).
-Removed top 28 bits (of 32) from port Y of cell $paramod$dfb5d276a71cbecdd4cf6f6b50ac4ba59fbc119d\pio_engine.$sub$pio_engine.v:228$972 ($sub).
-Removed top 28 bits (of 32) from port B of cell $paramod$dfb5d276a71cbecdd4cf6f6b50ac4ba59fbc119d\pio_engine.$shiftx$pio_engine.v:228$973 ($shiftx).
-Removed top 30 bits (of 32) from port A of cell $paramod$dfb5d276a71cbecdd4cf6f6b50ac4ba59fbc119d\pio_engine.$ge$pio_engine.v:227$975 ($ge).
-Removed top 27 bits (of 32) from port A of cell $paramod$dfb5d276a71cbecdd4cf6f6b50ac4ba59fbc119d\pio_engine.$sub$pio_engine.v:228$980 ($sub).
-Removed top 30 bits (of 32) from port A of cell $paramod$dfb5d276a71cbecdd4cf6f6b50ac4ba59fbc119d\pio_engine.$sub$pio_engine.v:228$982 ($sub).
-Removed top 28 bits (of 32) from port Y of cell $paramod$dfb5d276a71cbecdd4cf6f6b50ac4ba59fbc119d\pio_engine.$sub$pio_engine.v:228$982 ($sub).
-Removed top 28 bits (of 32) from port B of cell $paramod$dfb5d276a71cbecdd4cf6f6b50ac4ba59fbc119d\pio_engine.$shiftx$pio_engine.v:228$983 ($shiftx).
-Removed top 29 bits (of 32) from port A of cell $paramod$dfb5d276a71cbecdd4cf6f6b50ac4ba59fbc119d\pio_engine.$ge$pio_engine.v:227$985 ($ge).
-Removed top 27 bits (of 32) from port A of cell $paramod$dfb5d276a71cbecdd4cf6f6b50ac4ba59fbc119d\pio_engine.$sub$pio_engine.v:228$990 ($sub).
-Removed top 29 bits (of 32) from port A of cell $paramod$dfb5d276a71cbecdd4cf6f6b50ac4ba59fbc119d\pio_engine.$sub$pio_engine.v:228$992 ($sub).
-Removed top 28 bits (of 32) from port Y of cell $paramod$dfb5d276a71cbecdd4cf6f6b50ac4ba59fbc119d\pio_engine.$sub$pio_engine.v:228$992 ($sub).
-Removed top 28 bits (of 32) from port B of cell $paramod$dfb5d276a71cbecdd4cf6f6b50ac4ba59fbc119d\pio_engine.$shiftx$pio_engine.v:228$993 ($shiftx).
-Removed top 29 bits (of 32) from port A of cell $paramod$dfb5d276a71cbecdd4cf6f6b50ac4ba59fbc119d\pio_engine.$ge$pio_engine.v:227$995 ($ge).
-Removed top 27 bits (of 32) from port A of cell $paramod$dfb5d276a71cbecdd4cf6f6b50ac4ba59fbc119d\pio_engine.$sub$pio_engine.v:228$1000 ($sub).
-Removed top 29 bits (of 32) from port A of cell $paramod$dfb5d276a71cbecdd4cf6f6b50ac4ba59fbc119d\pio_engine.$sub$pio_engine.v:228$1002 ($sub).
-Removed top 28 bits (of 32) from port Y of cell $paramod$dfb5d276a71cbecdd4cf6f6b50ac4ba59fbc119d\pio_engine.$sub$pio_engine.v:228$1002 ($sub).
-Removed top 28 bits (of 32) from port B of cell $paramod$dfb5d276a71cbecdd4cf6f6b50ac4ba59fbc119d\pio_engine.$shiftx$pio_engine.v:228$1003 ($shiftx).
-Removed top 29 bits (of 32) from port A of cell $paramod$dfb5d276a71cbecdd4cf6f6b50ac4ba59fbc119d\pio_engine.$ge$pio_engine.v:227$1005 ($ge).
-Removed top 27 bits (of 32) from port A of cell $paramod$dfb5d276a71cbecdd4cf6f6b50ac4ba59fbc119d\pio_engine.$sub$pio_engine.v:228$1010 ($sub).
-Removed top 29 bits (of 32) from port A of cell $paramod$dfb5d276a71cbecdd4cf6f6b50ac4ba59fbc119d\pio_engine.$sub$pio_engine.v:228$1012 ($sub).
-Removed top 28 bits (of 32) from port Y of cell $paramod$dfb5d276a71cbecdd4cf6f6b50ac4ba59fbc119d\pio_engine.$sub$pio_engine.v:228$1012 ($sub).
-Removed top 28 bits (of 32) from port B of cell $paramod$dfb5d276a71cbecdd4cf6f6b50ac4ba59fbc119d\pio_engine.$shiftx$pio_engine.v:228$1013 ($shiftx).
-Removed top 29 bits (of 32) from port A of cell $paramod$dfb5d276a71cbecdd4cf6f6b50ac4ba59fbc119d\pio_engine.$ge$pio_engine.v:227$1015 ($ge).
-Removed top 27 bits (of 32) from port A of cell $paramod$dfb5d276a71cbecdd4cf6f6b50ac4ba59fbc119d\pio_engine.$sub$pio_engine.v:228$1020 ($sub).
-Removed top 29 bits (of 32) from port A of cell $paramod$dfb5d276a71cbecdd4cf6f6b50ac4ba59fbc119d\pio_engine.$sub$pio_engine.v:228$1022 ($sub).
-Removed top 28 bits (of 32) from port Y of cell $paramod$dfb5d276a71cbecdd4cf6f6b50ac4ba59fbc119d\pio_engine.$sub$pio_engine.v:228$1022 ($sub).
-Removed top 28 bits (of 32) from port B of cell $paramod$dfb5d276a71cbecdd4cf6f6b50ac4ba59fbc119d\pio_engine.$shiftx$pio_engine.v:228$1023 ($shiftx).
-Removed top 2 bits (of 6) from port A of cell $paramod$dfb5d276a71cbecdd4cf6f6b50ac4ba59fbc119d\pio_engine.$ge$pio_engine.v:229$1025 ($ge).
-Removed top 26 bits (of 32) from port B of cell $paramod$dfb5d276a71cbecdd4cf6f6b50ac4ba59fbc119d\pio_engine.$ge$pio_engine.v:229$1025 ($ge).
-Removed top 2 bits (of 6) from port B of cell $paramod$dfb5d276a71cbecdd4cf6f6b50ac4ba59fbc119d\pio_engine.$shl$pio_engine.v:229$1026 ($shl).
-Removed top 2 bits (of 6) from port B of cell $paramod$dfb5d276a71cbecdd4cf6f6b50ac4ba59fbc119d\pio_engine.$shr$pio_engine.v:229$1027 ($shr).
-Removed top 2 bits (of 6) from port B of cell $paramod$dfb5d276a71cbecdd4cf6f6b50ac4ba59fbc119d\pio_engine.$shl$pio_engine.v:238$1030 ($shl).
-Removed top 31 bits (of 32) from port A of cell $paramod$dfb5d276a71cbecdd4cf6f6b50ac4ba59fbc119d\pio_engine.$shl$pio_engine.v:238$1031 ($shl).
-Removed top 2 bits (of 6) from port B of cell $paramod$dfb5d276a71cbecdd4cf6f6b50ac4ba59fbc119d\pio_engine.$shl$pio_engine.v:238$1031 ($shl).
-Removed top 31 bits (of 32) from port B of cell $paramod$dfb5d276a71cbecdd4cf6f6b50ac4ba59fbc119d\pio_engine.$sub$pio_engine.v:238$1032 ($sub).
-Removed top 2 bits (of 6) from port B of cell $paramod$dfb5d276a71cbecdd4cf6f6b50ac4ba59fbc119d\pio_engine.$shr$pio_engine.v:239$1035 ($shr).
-Removed top 26 bits (of 32) from port A of cell $paramod$dfb5d276a71cbecdd4cf6f6b50ac4ba59fbc119d\pio_engine.$sub$pio_engine.v:239$1036 ($sub).
-Removed top 2 bits (of 6) from port B of cell $paramod$dfb5d276a71cbecdd4cf6f6b50ac4ba59fbc119d\pio_engine.$sub$pio_engine.v:239$1036 ($sub).
-Removed top 25 bits (of 32) from port Y of cell $paramod$dfb5d276a71cbecdd4cf6f6b50ac4ba59fbc119d\pio_engine.$sub$pio_engine.v:239$1036 ($sub).
-Converting cell $paramod$dfb5d276a71cbecdd4cf6f6b50ac4ba59fbc119d\pio_engine.$neg$pio_engine.v:283$1079 ($neg) from signed to unsigned.
-Removed top 1 bits (of 4) from port A of cell $paramod$dfb5d276a71cbecdd4cf6f6b50ac4ba59fbc119d\pio_engine.$neg$pio_engine.v:283$1079 ($neg).
-Removed top 1 bits (of 3) from port B of cell $paramod$dfb5d276a71cbecdd4cf6f6b50ac4ba59fbc119d\pio_engine.$procmux$1870_CMP0 ($eq).
-Removed top 1 bits (of 2) from port B of cell $paramod$dfb5d276a71cbecdd4cf6f6b50ac4ba59fbc119d\pio_engine.$procmux$2053_CMP0 ($eq).
-Removed top 1 bits (of 3) from port B of cell $paramod$dfb5d276a71cbecdd4cf6f6b50ac4ba59fbc119d\pio_engine.$procmux$2175_CMP0 ($eq).
-Removed top 2 bits (of 3) from port B of cell $paramod$dfb5d276a71cbecdd4cf6f6b50ac4ba59fbc119d\pio_engine.$procmux$2180_CMP0 ($eq).
-Removed top 1 bits (of 3) from port B of cell $paramod$dfb5d276a71cbecdd4cf6f6b50ac4ba59fbc119d\pio_engine.$procmux$2199_CMP0 ($eq).
-Removed top 2 bits (of 3) from port B of cell $paramod$dfb5d276a71cbecdd4cf6f6b50ac4ba59fbc119d\pio_engine.$procmux$2237_CMP0 ($eq).
-Removed top 1 bits (of 3) from port B of cell $paramod$dfb5d276a71cbecdd4cf6f6b50ac4ba59fbc119d\pio_engine.$procmux$2250_CMP0 ($eq).
-Removed top 2 bits (of 6) from wire $paramod$dfb5d276a71cbecdd4cf6f6b50ac4ba59fbc119d\pio_engine.in_n.
-Removed top 2 bits (of 6) from wire $paramod$dfb5d276a71cbecdd4cf6f6b50ac4ba59fbc119d\pio_engine.out_n.
+2.8. Executing WREDUCE pass (reducing word size of cells).
+Removed top 15 bits (of 16) from port B of cell pio_engine.$le$pio_engine.v:91$20 ($le).
+Removed top 15 bits (of 16) from port B of cell pio_engine.$sub$pio_engine.v:91$21 ($sub).
+Removed top 15 bits (of 16) from port B of cell pio_engine.$add$pio_engine.v:96$28 ($add).
+Removed top 2 bits (of 6) from mux cell pio_engine.$ternary$pio_engine.v:132$34 ($mux).
+Removed top 2 bits (of 6) from mux cell pio_engine.$ternary$pio_engine.v:133$36 ($mux).
+Removed top 2 bits (of 3) from port B of cell pio_engine.$eq$pio_engine.v:137$38 ($eq).
+Removed top 1 bits (of 3) from port B of cell pio_engine.$eq$pio_engine.v:138$39 ($eq).
+Removed top 1 bits (of 2) from port B of cell pio_engine.$eq$pio_engine.v:142$49 ($eq).
+Removed top 1 bits (of 2) from port B of cell pio_engine.$eq$pio_engine.v:154$60 ($eq).
+Removed top 2 bits (of 5) from port A of cell pio_engine.$sub$pio_engine.v:163$66 ($sub).
+Removed top 2 bits (of 5) from port B of cell pio_engine.$sub$pio_engine.v:163$66 ($sub).
+Removed top 1 bits (of 5) from port Y of cell pio_engine.$sub$pio_engine.v:163$66 ($sub).
+Removed top 4 bits (of 5) from port A of cell pio_engine.$shl$pio_engine.v:165$70 ($shl).
+Removed top 4 bits (of 5) from port B of cell pio_engine.$sub$pio_engine.v:165$71 ($sub).
+Removed top 4 bits (of 5) from port B of cell pio_engine.$sub$pio_engine.v:182$115 ($sub).
+Removed top 31 bits (of 32) from port A of cell pio_engine.$ge$pio_engine.v:188$117 ($ge).
+Removed top 31 bits (of 32) from port A of cell pio_engine.$sub$pio_engine.v:189$121 ($sub).
+Removed top 28 bits (of 32) from port Y of cell pio_engine.$sub$pio_engine.v:189$121 ($sub).
+Removed top 28 bits (of 32) from port B of cell pio_engine.$shiftx$pio_engine.v:189$122 ($shiftx).
+Removed top 31 bits (of 32) from port A of cell pio_engine.$ge$pio_engine.v:188$123 ($ge).
+Removed top 31 bits (of 32) from port A of cell pio_engine.$sub$pio_engine.v:189$127 ($sub).
+Removed top 28 bits (of 32) from port Y of cell pio_engine.$sub$pio_engine.v:189$127 ($sub).
+Removed top 28 bits (of 32) from port B of cell pio_engine.$shiftx$pio_engine.v:189$128 ($shiftx).
+Removed top 30 bits (of 32) from port A of cell pio_engine.$ge$pio_engine.v:188$129 ($ge).
+Removed top 30 bits (of 32) from port A of cell pio_engine.$sub$pio_engine.v:189$133 ($sub).
+Removed top 28 bits (of 32) from port Y of cell pio_engine.$sub$pio_engine.v:189$133 ($sub).
+Removed top 28 bits (of 32) from port B of cell pio_engine.$shiftx$pio_engine.v:189$134 ($shiftx).
+Removed top 30 bits (of 32) from port A of cell pio_engine.$ge$pio_engine.v:188$135 ($ge).
+Removed top 30 bits (of 32) from port A of cell pio_engine.$sub$pio_engine.v:189$139 ($sub).
+Removed top 28 bits (of 32) from port Y of cell pio_engine.$sub$pio_engine.v:189$139 ($sub).
+Removed top 28 bits (of 32) from port B of cell pio_engine.$shiftx$pio_engine.v:189$140 ($shiftx).
+Removed top 29 bits (of 32) from port A of cell pio_engine.$ge$pio_engine.v:188$141 ($ge).
+Removed top 29 bits (of 32) from port A of cell pio_engine.$sub$pio_engine.v:189$145 ($sub).
+Removed top 28 bits (of 32) from port Y of cell pio_engine.$sub$pio_engine.v:189$145 ($sub).
+Removed top 28 bits (of 32) from port B of cell pio_engine.$shiftx$pio_engine.v:189$146 ($shiftx).
+Removed top 29 bits (of 32) from port A of cell pio_engine.$ge$pio_engine.v:188$147 ($ge).
+Removed top 29 bits (of 32) from port A of cell pio_engine.$sub$pio_engine.v:189$151 ($sub).
+Removed top 28 bits (of 32) from port Y of cell pio_engine.$sub$pio_engine.v:189$151 ($sub).
+Removed top 28 bits (of 32) from port B of cell pio_engine.$shiftx$pio_engine.v:189$152 ($shiftx).
+Removed top 29 bits (of 32) from port A of cell pio_engine.$ge$pio_engine.v:188$153 ($ge).
+Removed top 29 bits (of 32) from port A of cell pio_engine.$sub$pio_engine.v:189$157 ($sub).
+Removed top 28 bits (of 32) from port Y of cell pio_engine.$sub$pio_engine.v:189$157 ($sub).
+Removed top 28 bits (of 32) from port B of cell pio_engine.$shiftx$pio_engine.v:189$158 ($shiftx).
+Removed top 29 bits (of 32) from port A of cell pio_engine.$ge$pio_engine.v:188$159 ($ge).
+Removed top 29 bits (of 32) from port A of cell pio_engine.$sub$pio_engine.v:189$163 ($sub).
+Removed top 28 bits (of 32) from port Y of cell pio_engine.$sub$pio_engine.v:189$163 ($sub).
+Removed top 28 bits (of 32) from port B of cell pio_engine.$shiftx$pio_engine.v:189$164 ($shiftx).
+Removed top 31 bits (of 32) from port A of cell pio_engine.$ge$pio_engine.v:202$242 ($ge).
+Removed top 29 bits (of 32) from port B of cell pio_engine.$lt$pio_engine.v:202$247 ($lt).
+Removed top 31 bits (of 32) from port A of cell pio_engine.$sub$pio_engine.v:203$249 ($sub).
+Removed top 28 bits (of 32) from port Y of cell pio_engine.$sub$pio_engine.v:203$249 ($sub).
+Removed top 28 bits (of 32) from port B of cell pio_engine.$shiftx$pio_engine.v:203$250 ($shiftx).
+Removed top 31 bits (of 32) from port A of cell pio_engine.$ge$pio_engine.v:202$251 ($ge).
+Removed top 29 bits (of 32) from port B of cell pio_engine.$lt$pio_engine.v:202$256 ($lt).
+Removed top 31 bits (of 32) from port A of cell pio_engine.$sub$pio_engine.v:203$258 ($sub).
+Removed top 28 bits (of 32) from port Y of cell pio_engine.$sub$pio_engine.v:203$258 ($sub).
+Removed top 28 bits (of 32) from port B of cell pio_engine.$shiftx$pio_engine.v:203$259 ($shiftx).
+Removed top 30 bits (of 32) from port A of cell pio_engine.$ge$pio_engine.v:202$260 ($ge).
+Removed top 29 bits (of 32) from port B of cell pio_engine.$lt$pio_engine.v:202$265 ($lt).
+Removed top 30 bits (of 32) from port A of cell pio_engine.$sub$pio_engine.v:203$267 ($sub).
+Removed top 28 bits (of 32) from port Y of cell pio_engine.$sub$pio_engine.v:203$267 ($sub).
+Removed top 28 bits (of 32) from port B of cell pio_engine.$shiftx$pio_engine.v:203$268 ($shiftx).
+Removed top 30 bits (of 32) from port A of cell pio_engine.$ge$pio_engine.v:202$269 ($ge).
+Removed top 29 bits (of 32) from port B of cell pio_engine.$lt$pio_engine.v:202$274 ($lt).
+Removed top 30 bits (of 32) from port A of cell pio_engine.$sub$pio_engine.v:203$276 ($sub).
+Removed top 28 bits (of 32) from port Y of cell pio_engine.$sub$pio_engine.v:203$276 ($sub).
+Removed top 28 bits (of 32) from port B of cell pio_engine.$shiftx$pio_engine.v:203$277 ($shiftx).
+Removed top 29 bits (of 32) from port A of cell pio_engine.$ge$pio_engine.v:202$278 ($ge).
+Removed top 29 bits (of 32) from port B of cell pio_engine.$lt$pio_engine.v:202$283 ($lt).
+Removed top 29 bits (of 32) from port A of cell pio_engine.$sub$pio_engine.v:203$285 ($sub).
+Removed top 28 bits (of 32) from port Y of cell pio_engine.$sub$pio_engine.v:203$285 ($sub).
+Removed top 28 bits (of 32) from port B of cell pio_engine.$shiftx$pio_engine.v:203$286 ($shiftx).
+Removed top 29 bits (of 32) from port A of cell pio_engine.$ge$pio_engine.v:202$287 ($ge).
+Removed top 29 bits (of 32) from port B of cell pio_engine.$lt$pio_engine.v:202$292 ($lt).
+Removed top 29 bits (of 32) from port A of cell pio_engine.$sub$pio_engine.v:203$294 ($sub).
+Removed top 28 bits (of 32) from port Y of cell pio_engine.$sub$pio_engine.v:203$294 ($sub).
+Removed top 28 bits (of 32) from port B of cell pio_engine.$shiftx$pio_engine.v:203$295 ($shiftx).
+Removed top 29 bits (of 32) from port A of cell pio_engine.$ge$pio_engine.v:202$296 ($ge).
+Removed top 29 bits (of 32) from port B of cell pio_engine.$lt$pio_engine.v:202$301 ($lt).
+Removed top 29 bits (of 32) from port A of cell pio_engine.$sub$pio_engine.v:203$303 ($sub).
+Removed top 28 bits (of 32) from port Y of cell pio_engine.$sub$pio_engine.v:203$303 ($sub).
+Removed top 28 bits (of 32) from port B of cell pio_engine.$shiftx$pio_engine.v:203$304 ($shiftx).
+Removed top 29 bits (of 32) from port A of cell pio_engine.$ge$pio_engine.v:202$305 ($ge).
+Removed top 29 bits (of 32) from port B of cell pio_engine.$lt$pio_engine.v:202$310 ($lt).
+Removed top 29 bits (of 32) from port A of cell pio_engine.$sub$pio_engine.v:203$312 ($sub).
+Removed top 28 bits (of 32) from port Y of cell pio_engine.$sub$pio_engine.v:203$312 ($sub).
+Removed top 28 bits (of 32) from port B of cell pio_engine.$shiftx$pio_engine.v:203$313 ($shiftx).
+Removed top 31 bits (of 32) from port A of cell pio_engine.$ge$pio_engine.v:227$399 ($ge).
+Removed top 27 bits (of 32) from port A of cell pio_engine.$sub$pio_engine.v:228$404 ($sub).
+Removed top 31 bits (of 32) from port A of cell pio_engine.$sub$pio_engine.v:228$406 ($sub).
+Removed top 28 bits (of 32) from port Y of cell pio_engine.$sub$pio_engine.v:228$406 ($sub).
+Removed top 28 bits (of 32) from port B of cell pio_engine.$shiftx$pio_engine.v:228$407 ($shiftx).
+Removed top 31 bits (of 32) from port A of cell pio_engine.$ge$pio_engine.v:227$409 ($ge).
+Removed top 27 bits (of 32) from port A of cell pio_engine.$sub$pio_engine.v:228$414 ($sub).
+Removed top 31 bits (of 32) from port A of cell pio_engine.$sub$pio_engine.v:228$416 ($sub).
+Removed top 28 bits (of 32) from port Y of cell pio_engine.$sub$pio_engine.v:228$416 ($sub).
+Removed top 28 bits (of 32) from port B of cell pio_engine.$shiftx$pio_engine.v:228$417 ($shiftx).
+Removed top 30 bits (of 32) from port A of cell pio_engine.$ge$pio_engine.v:227$419 ($ge).
+Removed top 27 bits (of 32) from port A of cell pio_engine.$sub$pio_engine.v:228$424 ($sub).
+Removed top 30 bits (of 32) from port A of cell pio_engine.$sub$pio_engine.v:228$426 ($sub).
+Removed top 28 bits (of 32) from port Y of cell pio_engine.$sub$pio_engine.v:228$426 ($sub).
+Removed top 28 bits (of 32) from port B of cell pio_engine.$shiftx$pio_engine.v:228$427 ($shiftx).
+Removed top 30 bits (of 32) from port A of cell pio_engine.$ge$pio_engine.v:227$429 ($ge).
+Removed top 27 bits (of 32) from port A of cell pio_engine.$sub$pio_engine.v:228$434 ($sub).
+Removed top 30 bits (of 32) from port A of cell pio_engine.$sub$pio_engine.v:228$436 ($sub).
+Removed top 28 bits (of 32) from port Y of cell pio_engine.$sub$pio_engine.v:228$436 ($sub).
+Removed top 28 bits (of 32) from port B of cell pio_engine.$shiftx$pio_engine.v:228$437 ($shiftx).
+Removed top 29 bits (of 32) from port A of cell pio_engine.$ge$pio_engine.v:227$439 ($ge).
+Removed top 27 bits (of 32) from port A of cell pio_engine.$sub$pio_engine.v:228$444 ($sub).
+Removed top 29 bits (of 32) from port A of cell pio_engine.$sub$pio_engine.v:228$446 ($sub).
+Removed top 28 bits (of 32) from port Y of cell pio_engine.$sub$pio_engine.v:228$446 ($sub).
+Removed top 28 bits (of 32) from port B of cell pio_engine.$shiftx$pio_engine.v:228$447 ($shiftx).
+Removed top 29 bits (of 32) from port A of cell pio_engine.$ge$pio_engine.v:227$449 ($ge).
+Removed top 27 bits (of 32) from port A of cell pio_engine.$sub$pio_engine.v:228$454 ($sub).
+Removed top 29 bits (of 32) from port A of cell pio_engine.$sub$pio_engine.v:228$456 ($sub).
+Removed top 28 bits (of 32) from port Y of cell pio_engine.$sub$pio_engine.v:228$456 ($sub).
+Removed top 28 bits (of 32) from port B of cell pio_engine.$shiftx$pio_engine.v:228$457 ($shiftx).
+Removed top 29 bits (of 32) from port A of cell pio_engine.$ge$pio_engine.v:227$459 ($ge).
+Removed top 27 bits (of 32) from port A of cell pio_engine.$sub$pio_engine.v:228$464 ($sub).
+Removed top 29 bits (of 32) from port A of cell pio_engine.$sub$pio_engine.v:228$466 ($sub).
+Removed top 28 bits (of 32) from port Y of cell pio_engine.$sub$pio_engine.v:228$466 ($sub).
+Removed top 28 bits (of 32) from port B of cell pio_engine.$shiftx$pio_engine.v:228$467 ($shiftx).
+Removed top 29 bits (of 32) from port A of cell pio_engine.$ge$pio_engine.v:227$469 ($ge).
+Removed top 27 bits (of 32) from port A of cell pio_engine.$sub$pio_engine.v:228$474 ($sub).
+Removed top 29 bits (of 32) from port A of cell pio_engine.$sub$pio_engine.v:228$476 ($sub).
+Removed top 28 bits (of 32) from port Y of cell pio_engine.$sub$pio_engine.v:228$476 ($sub).
+Removed top 28 bits (of 32) from port B of cell pio_engine.$shiftx$pio_engine.v:228$477 ($shiftx).
+Removed top 2 bits (of 6) from port A of cell pio_engine.$ge$pio_engine.v:229$479 ($ge).
+Removed top 26 bits (of 32) from port B of cell pio_engine.$ge$pio_engine.v:229$479 ($ge).
+Removed top 2 bits (of 6) from port B of cell pio_engine.$shl$pio_engine.v:229$480 ($shl).
+Removed top 2 bits (of 6) from port B of cell pio_engine.$shr$pio_engine.v:229$481 ($shr).
+Removed top 2 bits (of 6) from port B of cell pio_engine.$shl$pio_engine.v:238$484 ($shl).
+Removed top 31 bits (of 32) from port A of cell pio_engine.$shl$pio_engine.v:238$485 ($shl).
+Removed top 2 bits (of 6) from port B of cell pio_engine.$shl$pio_engine.v:238$485 ($shl).
+Removed top 31 bits (of 32) from port B of cell pio_engine.$sub$pio_engine.v:238$486 ($sub).
+Removed top 2 bits (of 6) from port B of cell pio_engine.$shr$pio_engine.v:239$489 ($shr).
+Removed top 26 bits (of 32) from port A of cell pio_engine.$sub$pio_engine.v:239$490 ($sub).
+Removed top 2 bits (of 6) from port B of cell pio_engine.$sub$pio_engine.v:239$490 ($sub).
+Removed top 25 bits (of 32) from port Y of cell pio_engine.$sub$pio_engine.v:239$490 ($sub).
+Converting cell pio_engine.$neg$pio_engine.v:283$533 ($neg) from signed to unsigned.
+Removed top 1 bits (of 4) from port A of cell pio_engine.$neg$pio_engine.v:283$533 ($neg).
+Removed top 1 bits (of 3) from port B of cell pio_engine.$procmux$1337_CMP0 ($eq).
+Removed top 1 bits (of 2) from port B of cell pio_engine.$procmux$1520_CMP0 ($eq).
+Removed top 1 bits (of 3) from port B of cell pio_engine.$procmux$1642_CMP0 ($eq).
+Removed top 2 bits (of 3) from port B of cell pio_engine.$procmux$1647_CMP0 ($eq).
+Removed top 1 bits (of 3) from port B of cell pio_engine.$procmux$1666_CMP0 ($eq).
+Removed top 2 bits (of 3) from port B of cell pio_engine.$procmux$1704_CMP0 ($eq).
+Removed top 1 bits (of 3) from port B of cell pio_engine.$procmux$1717_CMP0 ($eq).
+Removed top 2 bits (of 6) from wire pio_engine.in_n.
+Removed top 2 bits (of 6) from wire pio_engine.out_n.
 
-3.9. Executing OPT_CLEAN pass (remove unused cells and wires).
-Finding unused cells or wires in module \engine_formal..
-Finding unused cells or wires in module $paramod$dfb5d276a71cbecdd4cf6f6b50ac4ba59fbc119d\pio_engine..
+2.9. Executing OPT_CLEAN pass (remove unused cells and wires).
+Finding unused cells or wires in module \pio_engine..
 Removed 0 unused cells and 2 unused wires.
 <suppressed ~1 debug messages>
 
-3.10. Executing MEMORY_COLLECT pass (generating $mem cells).
+2.10. Executing MEMORY_COLLECT pass (generating $mem cells).
 
-3.11. Executing OPT pass (performing simple optimizations).
+2.11. Executing OPT pass (performing simple optimizations).
 
-3.11.1. Executing OPT_EXPR pass (perform const folding).
-Optimizing module engine_formal.
-Optimizing module $paramod$dfb5d276a71cbecdd4cf6f6b50ac4ba59fbc119d\pio_engine.
+2.11.1. Executing OPT_EXPR pass (perform const folding).
+Optimizing module pio_engine.
 
-3.11.2. Executing OPT_MERGE pass (detect identical cells).
-Finding identical cells in module `\engine_formal'.
-Computing hashes of 10 cells of `\engine_formal'.
-Finding duplicate cells in `\engine_formal'.
-Finding identical cells in module `$paramod$dfb5d276a71cbecdd4cf6f6b50ac4ba59fbc119d\pio_engine'.
-Computing hashes of 521 cells of `$paramod$dfb5d276a71cbecdd4cf6f6b50ac4ba59fbc119d\pio_engine'.
-Finding duplicate cells in `$paramod$dfb5d276a71cbecdd4cf6f6b50ac4ba59fbc119d\pio_engine'.
+2.11.2. Executing OPT_MERGE pass (detect identical cells).
+Finding identical cells in module `\pio_engine'.
+Computing hashes of 533 cells of `\pio_engine'.
+Finding duplicate cells in `\pio_engine'.
 Removed a total of 0 cells.
 
-3.11.3. Executing OPT_CLEAN pass (remove unused cells and wires).
-Finding unused cells or wires in module \engine_formal..
-Finding unused cells or wires in module $paramod$dfb5d276a71cbecdd4cf6f6b50ac4ba59fbc119d\pio_engine..
+2.11.3. Executing OPT_CLEAN pass (remove unused cells and wires).
+Finding unused cells or wires in module \pio_engine..
 
-3.11.4. Finished fast OPT passes.
+2.11.4. Finished fast OPT passes.
 
-3.12. Executing SORT pass.
+2.12. Executing SORT pass.
 
-3.13. Printing statistics.
+2.13. Printing statistics.
 
-=== $paramod$dfb5d276a71cbecdd4cf6f6b50ac4ba59fbc119d\pio_engine ===
+=== pio_engine ===
 
         +----------Local Count, excluding submodules.
         | 
-      542 wires
-     4976 wire bits
-       71 public wires
-      772 public wire bits
+      551 wires
+     4988 wire bits
+       72 public wires
+      774 public wire bits
        30 ports
       180 port bits
-      521 cells
-        4   $add
+      533 cells
+        5   $add
        14   $adff
         5   $and
-        5   $dff
+        3   $check
+        6   $dff
        28   $eq
        25   $ge
-        1   $le
-       43   $logic_and
-       14   $logic_not
+        3   $le
+       44   $logic_and
+       15   $logic_not
         1   $logic_or
        32   $lt
         1   $mem_v2
-      221   $mux
-        3   $ne
+      223   $mux
+        4   $ne
         1   $neg
         3   $not
         4   $or
@@ -697,76 +622,27 @@ Finding unused cells or wires in module $paramod$dfb5d276a71cbecdd4cf6f6b50ac4ba
         4   $shr
        41   $sub
 
-=== engine_formal ===
+2.14. Executing CHECK pass (checking for obvious problems).
+Checking module pio_engine...
+Found and reported 0 problems.
 
-        +----------Local Count, excluding submodules.
-        | 
-       35 wires
-      142 wire bits
-       30 public wires
-      135 public wire bits
-       22 ports
-      120 port bits
-       10 cells
-        1   $add
-        1   $and
-        2   $check
-        1   $dff
-        2   $le
-        2   $mux
-        1   $ne
+3. Executing HIERARCHY pass (managing design hierarchy).
+Attribute `top' found on module `pio_engine'. Setting top module to pio_engine.
 
-=== design hierarchy ===
+3.1. Analyzing design hierarchy..
+Top module:  \pio_engine
 
-        +----------Count including submodules.
-        | 
-       10 engine_formal
+3.2. Analyzing design hierarchy..
+Top module:  \pio_engine
+Removed 0 unused modules.
+Module pio_engine directly or indirectly contains formal properties -> setting "keep" attribute.
 
-        +----------Count including submodules.
-        | 
-       35 wires
-      142 wire bits
-       30 public wires
-      135 public wire bits
-       22 ports
-      120 port bits
-        - memories
-        - memory bits
-        - processes
-       10 cells
-        1   $add
-        1   $and
-        2   $check
-        1   $dff
-        2   $le
-        2   $mux
-        1   $ne
+4. Executing jny backend.
 
-3.14. Executing CHECK pass (checking for obvious problems).
-Checking module $paramod$dfb5d276a71cbecdd4cf6f6b50ac4ba59fbc119d\pio_engine...
-Checking module engine_formal...
-Warning: Wire engine_formal.\rxf_cnt [0] is used but has no driver.
-Warning: Wire engine_formal.\txf_cnt [0] is used but has no driver.
-Found and reported 2 problems.
-
-4. Executing HIERARCHY pass (managing design hierarchy).
-Attribute `top' found on module `engine_formal'. Setting top module to engine_formal.
-
-4.1. Analyzing design hierarchy..
-Top module:  \engine_formal
-
-4.2. Analyzing design hierarchy..
-Top module:  \engine_formal
-Removing unused module `$paramod$dfb5d276a71cbecdd4cf6f6b50ac4ba59fbc119d\pio_engine'.
-Removed 1 unused modules.
-Module engine_formal directly or indirectly contains formal properties -> setting "keep" attribute.
-
-5. Executing jny backend.
-
-6. Executing RTLIL backend.
+5. Executing RTLIL backend.
 Output filename: ../model/design.il
 
-Warnings: 8 unique messages, 10 total
-End of script. Logfile hash: b0b3b86c63, time: 0.18s, user: 0.17s, system: 0.02s, MEM: 34.56 MB peak
+Warnings: 2 unique messages, 2 total
+End of script. Logfile hash: 1e09aa79c6, time: 0.15s, user: 0.15s, system: 0.02s, MEM: 32.44 MB peak
 Yosys 0.70+post (git sha1 0c11ea098be065e585a90a06e7b7da49936cf231, Release, AppleClang clang++ 21.0.0.21000334)
-Time spent: 16% 6x opt_clean (0 sec), 14% 2x check (0 sec), ...
+Time spent: 18% 6x opt_clean (0 sec), 15% 2x read_verilog (0 sec), ...
